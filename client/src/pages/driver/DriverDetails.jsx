@@ -125,7 +125,7 @@ const DriverDetails = () => {
     const [doNumber, setDoNumber] = useState("");
     const [lrNumber, setLrNumber] = useState("");
     const [mobile, setMobile] = useState("");
-    const [doValidated, setDoValidated] = useState(false);
+    const [doValidated, setDoValidated] = useState(true);
 
     const utteranceRef = useRef(null);
 
@@ -212,94 +212,64 @@ const DriverDetails = () => {
             />
 
             <div className="page-content">
-                {!doValidated ? (
-                    <>
-                        <div className="mt-4 mb-6 text-center">
-                            <h1 className="text-xl font-bold text-primary">
-                                Welcome to Kasta Plant
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                कास्ता प्लांट में आपका स्वागत है
-                            </p>
+
+
+
+                <>
+                    <div className="mt-2 mb-2">
+                        <div className="inline-block bg-primary/10 text-primary px-4 py-1.5 rounded-lg text-sm font-semibold mb-4">
+                            DO #{doNumber}
                         </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-sm font-medium text-foreground block mb-1.5">
-                                    DO Number / डीओ नंबर
-                                </label>
+                        <StepIndicator
+                            currentStep={1}
+                            totalSteps={4}
+                            label="Driver Details"
+                            labelHi="ड्राइवर विवरण"
+                        />
 
-                                <input
-                                    value={doNumber}
-                                    onChange={(e) => setDoNumber(e.target.value)}
-                                    placeholder="Ex: DO-784512"
-                                    className="w-full px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                />
-                            </div>
+                        <p className="text-sm text-muted-foreground mt-1 mb-4">
+                            Please enter your details to verify the trip
+                            <br />
+                            यात्रा सत्यापित करने के लिए कृपया अपना विवरण दर्ज करें
+                        </p>
+                    </div>
 
-                            <button
-                                onClick={handleValidateDO}
-                                disabled={doNumber.length < 4}
-                                className="btn-primary-full disabled:opacity-50"
-                            >
-                                Validate DO / डीओ सत्यापित करें
-                            </button>
-                        </div>
-                    </>
-                ) : (
-                    <>
-                        <div className="mt-2 mb-2">
-                            <div className="inline-block bg-primary/10 text-primary px-4 py-1.5 rounded-lg text-sm font-semibold mb-4">
-                                DO #{doNumber}
-                            </div>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-foreground block mb-1.5">
+                                LR Number / LR नंबर
+                            </label>
 
-                            <StepIndicator
-                                currentStep={1}
-                                totalSteps={4}
-                                label="Driver Details"
-                                labelHi="ड्राइवर विवरण"
+                            <input
+                                value={lrNumber}
+                                onChange={(e) => setLrNumber(e.target.value)}
+                                maxLength={30}
+                                placeholder="Ex: LR-12345678"
+                                className="w-full px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             />
-
-                            <p className="text-sm text-muted-foreground mt-1 mb-4">
-                                Please enter your details to verify the trip
-                                <br />
-                                यात्रा सत्यापित करने के लिए कृपया अपना विवरण दर्ज करें
-                            </p>
                         </div>
 
-                        <div className="space-y-4">
-                            <div>
-                                <label className="text-sm font-medium text-foreground block mb-1.5">
-                                    LR Number / LR नंबर
-                                </label>
+                        <div>
+                            <label className="text-sm font-medium text-foreground block mb-1.5">
+                                Mobile Number / मोबाइल नंबर
+                            </label>
 
-                                <input
-                                    value={lrNumber}
-                                    onChange={(e) => setLrNumber(e.target.value)}
-                                    placeholder="Ex: LR-12345678"
-                                    className="w-full px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="text-sm font-medium text-foreground block mb-1.5">
-                                    Mobile Number / मोबाइल नंबर
-                                </label>
-
-                                <input
-                                    type="tel"
-                                    maxLength={10}
-                                    value={mobile}
-                                    onChange={(e) =>
-                                        setMobile(e.target.value.replace(/\D/g, ""))
-                                    }
-                                    placeholder="Ex: 9876543210"
-                                    className="w-full px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                />
-                            </div>
+                            <input
+                                type="tel"
+                                min={10}
+                                maxLength={10}
+                                value={mobile}
+                                onChange={(e) =>
+                                    setMobile(e.target.value.replace(/\D/g, ""))
+                                }
+                                placeholder="Ex: 9876543210"
+                                className="w-full px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
                         </div>
-                    </>
-                )}
+                    </div>
+                </>
+
             </div>
 
             {doValidated && (

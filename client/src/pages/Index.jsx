@@ -61,7 +61,7 @@ const Index = () => {
 
                 <div className="w-full space-y-4">
                     <button
-                        onClick={() => navigate("/driver/login")}
+                        onClick={() => navigate("/driver/location")}
                         className="btn-primary-full text-lg py-5"
                     >
                         <Truck className="w-6 h-6" />
