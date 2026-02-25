@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "nodemon -r dotenv/config --experimental-json-modules src/index.js"
   },
   "keywords": [],
   "author": "",
@@ -15,9 +15,13 @@
     "@prisma/client": "^6.19.2",
     "@types/mssql": "^9.1.9",
     "@types/node": "^25.3.0",
+    "axios": "^1.13.5",
+    "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
+    "nodemon": "^3.1.14",
     "prisma": "^6.19.2"
   }
 }

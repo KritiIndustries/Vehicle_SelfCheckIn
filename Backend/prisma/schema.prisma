@@ -10,8 +10,10 @@ generator client {
 model Guard_Master {
   Guard_Id     Int      @id @default(autoincrement())
   Name         String   @db.VarChar(100)
-  Mobile       String   @db.VarChar(15)
+  Mobile       String   @unique @db.VarChar(15)
   Active       Boolean  @default(true)
+  OTP       String?
+  OTP_Expiry  DateTime?
 
   Created_At   DateTime @default(now()) @db.DateTime2
   Updated_At   DateTime @updatedAt @db.DateTime2

@@ -22,7 +22,7 @@ const App = () => (
       <Toaster position="top-center" richColors closeButton />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LocationCheck />} />
+          <Route path="/" element={<Index />} />
           <Route path="/driver/login" element={<DriverLogin />} />
           <Route path="/driver/location" element={<LocationCheck />} />
           <Route path="/driver/details" element={<DriverDetails />} />

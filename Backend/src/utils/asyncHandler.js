@@ -2,7 +2,8 @@ const asyncHandler = (fn) => async (req, res, next) => {
     try {
         await fn(req, res, next)
     } catch (error) {
-        res.status(500).json({
+        const statusCode = error.statusCode || 500;
+        res.status(statusCode).json({
             success: false,
             message: error.message,
             data: "Async handler me ayi hai Error"

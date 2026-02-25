@@ -1,11 +1,10 @@
-import { app } from './app.js'
-
-import connectDB from "./db/db.js";
 import dotenv from "dotenv";
+dotenv.config();
 
-dotenv.config({
-    path: './.env'
-}) // Load environment variables from .env file
+import { app } from "./app.js";
 
-connectDB().then(() => app.listen(8000, () => console.log("Server Started in 8000")))
-    .catch(err => console.log("Connection faailed", err))
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
