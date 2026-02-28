@@ -199,7 +199,7 @@
 // export default GuardDashboard;
 
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Truck,
     Clock,
@@ -218,13 +218,45 @@ const mockVehicles = [
 ];
 
 
-
+import axios from "axios";
+import formatApiDate from "@/services/formatApiDate.service";
+const API = import.meta.env.VITE_API_BASE_URL;;
 export default function GuardDashboard() {
-    const [vehicles, setVehicles] = useState(mockVehicles);
+    const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
     const [activeTab, setActiveTab] = useState("queue");
     const [rejectRemark, setRejectRemark] = useState("");
     const [showRejectModal, setShowRejectModal] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const fetchVehicles = async () => {
+        try {
+            const res = await axios.get(`${API}/api/guard/getCheckedinDetails`);
+
+            const formatted = res.data.data.map((item) => ({
+                id: item.Id,
+                vehicleNo: item.Vehicle_No,
+                driverName: item.Driver_Name,
+                doNumber: item.Do_No,
+                status: mapStatus(item.Status),
+                entryTime: item.Entry_Time,
+                documents: item.Documents
+            }));
+
+            setVehicles(formatted);
+
+        } catch (err) {
+            console.error("Fetch error:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+    const mapStatus = (status) => {
+        if (status === "CheckedIn") return "waiting";
+        if (status === "Reportin") return "inside";
+        if (status === "Completed") return "completed";
+        return "waiting";
+    };
 
     const queueVehicles = vehicles.filter(
         (v) => v.status === "waiting"
@@ -233,36 +265,31 @@ export default function GuardDashboard() {
         (v) => v.status === "inside" || v.status === "loading"
     );
 
-    const handleCheckIn = (id) => {
-        setVehicles((prev) =>
-            prev.map((v) =>
-                v.id === id
-                    ? { ...v, status: "inside", entryTime: new Date().toLocaleTimeString() }
-                    : v
-            )
-        );
-        setSelectedVehicle(null);
+    const handleCheckIn = async (id) => {
+        try {
+            await axios.patch(`${API}/api/guard/approve/${id}`);
+            fetchVehicles();
+            setSelectedVehicle(null);
+        } catch (err) {
+            alert("Approval failed");
+        }
     };
 
-    const handleCheckOut = (id) => {
-        setVehicles((prev) =>
-            prev.map((v) =>
-                v.id === id ? { ...v, status: "completed" } : v
-            )
-        );
-        setSelectedVehicle(null);
-    };
-
-    const handleReject = (id) => {
-        if (!rejectRemark) return;
-        setVehicles((prev) => prev.filter((v) => v.id !== id));
-        setRejectRemark("");
-        setShowRejectModal(false);
-        setSelectedVehicle(null);
+    const handleCheckOut = async (id) => {
+        try {
+            await axios.patch(`${API}/api/guard/checkout/${id}`);
+            fetchVehicles();
+            setSelectedVehicle(null);
+        } catch (err) {
+            alert("Checkout failed");
+        }
     };
 
     const displayed = activeTab === "queue" ? queueVehicles : insideVehicles;
 
+    useEffect(() => {
+        fetchVehicles();
+    }, [])
     return (
         <div className="mobile-container">
             <AppHeader showAudio={false} />
@@ -282,6 +309,9 @@ export default function GuardDashboard() {
                     गार्ड डैशबोर्ड
                 </p>
             </div>
+
+
+
 
             {/* STATS */}
             <div className="grid grid-cols-3 gap-3 px-5 mb-4">
@@ -339,7 +369,7 @@ export default function GuardDashboard() {
                                 className="text-sm font-bold"
                                 style={{ color: "hsl(var(--primary))" }}
                             >
-                                #{v.token}
+                                #{v.id}
                             </span>
                         </div>
 
@@ -422,12 +452,12 @@ export default function GuardDashboard() {
 
                         <div className="space-y-3 mb-6">
                             {[
-                                { label: "Token", value: `#${selectedVehicle.token}` },
+                                { label: "Token", value: `#${selectedVehicle.id}` },
                                 { label: "DO Number", value: selectedVehicle.doNumber },
                                 { label: "RFID", value: selectedVehicle.rfid },
                                 { label: "Status", value: selectedVehicle.status },
                                 ...(selectedVehicle.entryTime
-                                    ? [{ label: "Entry Time", value: selectedVehicle.entryTime }]
+                                    ? [{ label: "Entry Time", value: formatApiDate(selectedVehicle.entryTime) }]
                                     : []),
                             ].map((item) => (
                                 <div key={item.label} className="flex justify-between">
@@ -553,7 +583,6 @@ export default function GuardDashboard() {
         </div>
     );
 }
-
 /* ===================== */
 /* SMALL REUSABLE UI */
 /* ===================== */

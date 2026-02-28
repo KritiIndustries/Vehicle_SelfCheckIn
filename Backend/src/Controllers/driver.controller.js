@@ -240,6 +240,172 @@ export const uploadDoc = asyncHandler(async (req, res) => {
 
 const allowedDocTypes = ["dl", "rc", "insurance", "fitness"];
 
+
+// export const uploadTempDocument = asyncHandler(async (req, res) => { 
+
+
+//     if (!req.file) {
+//         throw new ApiError(400, "No file uploaded");
+//     }
+
+//     const { sessionId, type } = req.body;
+
+//     if (!sessionId || !type) {
+//         throw new ApiError(400, "Session ID and document type required");
+//     }
+
+//     if (!allowedDocTypes.includes(type)) {
+//         throw new ApiError(400, "Invalid document type");
+//     }
+
+//     // Prevent duplicate in temp
+//     const existing = await prisma.driver_Temp_Upload.findFirst({
+//         where: {
+//             Session_Id: sessionId,
+//             Doc_Type: type,
+//             Is_Selfie: false
+//         }
+//     });
+
+//     if (existing) {
+//         throw new ApiError(409, "Document already uploaded");
+//     }
+
+//     await prisma.driver_Temp_Upload.create({
+//         data: {
+//             Session_Id: sessionId,
+//             Doc_Type: type,
+//             Image_Path: req.file.path,
+//             Is_Selfie: false
+//         }
+//     });
+
+//     return res.json(
+//         new ApiResponse(200, null, "Document uploaded")
+//     );
+// });
+// export const uploadTempSelfie = asyncHandler(async (req, res) => {
+
+//     if (!req.file) {
+//         throw new ApiError(400, "No selfie uploaded");
+//     }
+
+//     const { sessionId } = req.body;
+
+//     if (!sessionId) {
+//         throw new ApiError(400, "Session ID required");
+//     }
+
+//     // Only one selfie allowed
+//     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
+//         where: {
+//             Session_Id: sessionId,
+//             Is_Selfie: true
+//         }
+//     });
+
+//     if (existingSelfie) {
+//         throw new ApiError(409, "Selfie already uploaded");
+//     }
+
+//     await prisma.driver_Temp_Upload.create({
+//         data: {
+//             Session_Id: sessionId,
+//             Doc_Type: "selfie",
+//             Image_Path: req.file.path,
+//             Is_Selfie: true
+//         }
+//     });
+
+//     return res.json(
+//         new ApiResponse(200, null, "Selfie uploaded")
+//     );
+// });
+
+// export const finalizeCheckin = asyncHandler(async (req, res) => {
+
+//     const { sessionId, doNo, vehicleNo, driverName, mobile } = req.body;
+//     console.log(sessionId);
+//     console.log(doNo, vehicleNo, driverName, mobile);
+
+
+
+//     if (!sessionId || !doNo || !vehicleNo || !driverName || !mobile) {
+//         throw new ApiError(400, "Missing required fields");
+//     }
+
+//     const tempUploads = await prisma.driver_Temp_Upload.findMany({
+//         where: { Session_Id: sessionId }
+//     });
+
+//     if (tempUploads.length < 5) {
+//         throw new ApiError(400, "All documents and selfie required");
+//     }
+
+//     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
+//     const uploadedTypes = tempUploads.map(d => d.Doc_Type);
+
+//     for (const doc of requiredDocs) {
+//         if (!uploadedTypes.includes(doc)) {
+//             throw new ApiError(400, `${doc} missing`);
+//         }
+//     }
+
+//     if (!uploadedTypes.includes("selfie")) {
+//         throw new ApiError(400, "Selfie missing");
+//     }
+
+//     // Prevent duplicate check-in
+//     const existing = await prisma.driver_Checkin.findFirst({
+//         where: {
+//             Do_No: doNo,
+//             Vehicle_No: vehicleNo,
+//             Status: "CheckedIn"
+//         }
+//     });
+
+//     if (existing) {
+//         throw new ApiError(409, "Driver already checked-in");
+//     }
+
+//     // Create DRIVER_CHECKIN
+//     const checkin = await prisma.driver_Checkin.create({
+//         data: {
+//             Do_No: doNo,
+//             Vehicle_No: vehicleNo,
+//             Driver_Name: driverName,
+//             Mobile: mobile,
+//             Status: "CheckedIn",
+//             Entry_Time: new Date()
+//         }
+//     });
+
+//     // Move documents
+//     for (const upload of tempUploads) {
+//         await prisma.driver_Documents.create({
+//             data: {
+//                 Driver_Checkin_Id: checkin.Id,
+//                 Doc_Type: upload.Doc_Type,
+//                 Image_Path: upload.Image_Path,
+//                 Verified: false
+//             }
+//         });
+//     }
+
+//     // Cleanup temp
+//     await prisma.driver_Temp_Upload.deleteMany({
+//         where: { Session_Id: sessionId }
+//     });
+
+//     return res.status(201).json(
+//         new ApiResponse(201, checkin, "Check-in successful")
+//     );
+// });
+
+import { saveFileLocally } from "../services/file.service.js";
+
+
+
 export const uploadTempDocument = asyncHandler(async (req, res) => {
 
     if (!req.file) {
@@ -256,7 +422,6 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid document type");
     }
 
-    // Prevent duplicate in temp
     const existing = await prisma.driver_Temp_Upload.findFirst({
         where: {
             Session_Id: sessionId,
@@ -269,11 +434,14 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Document already uploaded");
     }
 
+    // 🔥 Save file manually
+    const filePath = await saveFileLocally(req.file);
+
     await prisma.driver_Temp_Upload.create({
         data: {
             Session_Id: sessionId,
             Doc_Type: type,
-            Image_Path: req.file.path,
+            Image_Path: filePath,
             Is_Selfie: false
         }
     });
@@ -294,7 +462,6 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Session ID required");
     }
 
-    // Only one selfie allowed
     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
         where: {
             Session_Id: sessionId,
@@ -306,11 +473,14 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Selfie already uploaded");
     }
 
+    // 🔥 Save file manually
+    const filePath = await saveFileLocally(req.file);
+
     await prisma.driver_Temp_Upload.create({
         data: {
             Session_Id: sessionId,
             Doc_Type: "selfie",
-            Image_Path: req.file.path,
+            Image_Path: filePath,
             Is_Selfie: true
         }
     });
@@ -349,7 +519,6 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Selfie missing");
     }
 
-    // Prevent duplicate check-in
     const existing = await prisma.driver_Checkin.findFirst({
         where: {
             Do_No: doNo,
@@ -362,36 +531,39 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Driver already checked-in");
     }
 
-    // Create DRIVER_CHECKIN
-    const checkin = await prisma.driver_Checkin.create({
-        data: {
-            Do_No: doNo,
-            Vehicle_No: vehicleNo,
-            Driver_Name: driverName,
-            Mobile: mobile,
-            Status: "CheckedIn",
-            Entry_Time: new Date()
-        }
-    });
+    // 🔥 TRANSACTION (Very Important)
+    const result = await prisma.$transaction(async (tx) => {
 
-    // Move documents
-    for (const upload of tempUploads) {
-        await prisma.driver_Documents.create({
+        const checkin = await tx.driver_Checkin.create({
             data: {
-                Driver_Checkin_Id: checkin.Id,
-                Doc_Type: upload.Doc_Type,
-                Image_Path: upload.Image_Path,
-                Verified: false
+                Do_No: doNo,
+                Vehicle_No: vehicleNo,
+                Driver_Name: driverName,
+                Mobile: mobile,
+                Status: "CheckedIn",
+                Entry_Time: new Date()
             }
         });
-    }
 
-    // Cleanup temp
-    await prisma.driver_Temp_Upload.deleteMany({
-        where: { Session_Id: sessionId }
+        for (const upload of tempUploads) {
+            await tx.driver_Documents.create({
+                data: {
+                    Driver_Checkin_Id: checkin.Id,
+                    Doc_Type: upload.Doc_Type,
+                    Image_Path: upload.Image_Path,
+                    Verified: false
+                }
+            });
+        }
+
+        await tx.driver_Temp_Upload.deleteMany({
+            where: { Session_Id: sessionId }
+        });
+
+        return checkin;
     });
 
     return res.status(201).json(
-        new ApiResponse(201, checkin, "Check-in successful")
+        new ApiResponse(201, result, "Check-in successful")
     );
 });

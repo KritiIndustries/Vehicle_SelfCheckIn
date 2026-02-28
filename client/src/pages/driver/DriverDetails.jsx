@@ -114,15 +114,18 @@
 
 // export default DriverDetails;
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import InfoBanner from "@/components/InfoBanner";
 import StepIndicator from "@/components/StepIndicator";
 
 const DriverDetails = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const doValue = searchParams.get("DO");
 
-    const [doNumber, setDoNumber] = useState("");
+
+    const [doNumber, setDoNumber] = useState(doValue || 0);
     const [lrNumber, setLrNumber] = useState("");
     const [mobile, setMobile] = useState("");
     const [doValidated, setDoValidated] = useState(true);

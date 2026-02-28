@@ -32,7 +32,7 @@ const LocationCheck = () => {
     useEffect(() => {
         if (!audioEnabled) return;
 
-            speak(
+        speak(
             "आप अभी कास्ता प्लांट से 500 मीटर से अधिक दूरी पर हैं");
 
         return () => speechSynthesis.cancel();
@@ -103,10 +103,10 @@ const LocationCheck = () => {
                     <div className="text-center">
                         <div className="bg-success/10 border border-success/20 rounded-2xl px-6 py-6 mb-6">
                             <h2 className="text-lg font-bold text-success">Welcome to Kasta Plant</h2>
-                                <p className="text-sm text-muted-foreground mt-1">कास्ता प्लांट में आपका स्वागत है</p>
+                            <p className="text-sm text-muted-foreground mt-1">कास्ता प्लांट में आपका स्वागत है</p>
                             <p className="text-xs text-muted-foreground mt-2">~{distance}m from plant</p>
                         </div>
-                        <button onClick={() => navigate("/driver/details")} className="btn-primary-full">
+                        <button onClick={() => navigate("/driver/d")} className="btn-primary-full">
                             Continue / आगे बढ़ें →
                         </button>
                     </div>

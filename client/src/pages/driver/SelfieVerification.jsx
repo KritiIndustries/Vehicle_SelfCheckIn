@@ -412,13 +412,16 @@ const SelfieVerification = () => {
 
     const finalizeCheckin = async () => {
         try {
+            let value = JSON.parse(sessionStorage.getItem("driverDetails"));
+            console.log("Finalize response received", sessionId, value);
             await axios.post(`${API}/api/driver/finalize`, {
                 sessionId,
-                doNo: "DO123",
-                vehicleNo: "MP09AB1234",
-                driverName: "Test Driver",
-                mobile: "9999999999"
+                doNo: value?.doNumber || null,
+                vehicleNo: "MP09AB1235",
+                driverName: "Test Driver1",
+                mobile: value?.mobile || null
             });
+
 
             localStorage.removeItem("driver_session");
 

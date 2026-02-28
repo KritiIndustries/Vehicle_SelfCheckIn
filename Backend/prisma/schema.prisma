@@ -57,7 +57,6 @@ model Driver_Checkin {
   Latitude               Decimal?  @db.Decimal(10,6)
   Longitude              Decimal?  @db.Decimal(10,6)
 
-  Token                  String?   @unique @db.VarChar(50)
 
   Created_At             DateTime @default(now()) @db.DateTime2
   Updated_At             DateTime @updatedAt @db.DateTime2
@@ -68,7 +67,6 @@ model Driver_Checkin {
   @@index([Do_No])
   @@index([Vehicle_No])
   @@index([Status])
-  @@index([Token])
 }
 
 model Driver_Documents {

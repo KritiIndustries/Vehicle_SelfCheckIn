@@ -11,7 +11,7 @@
 //           <Route path="/" element={<Index />} />
 //           <Route path="/driver/login" element={<DriverLogin />} />
 //           <Route path="/driver/location" element={<LocationCheck />} />
-//           <Route path="/driver/details" element={<DriverDetails />} />
+//           <Route path="/driver/d" element={<DriverDetails />} />
 //           <Route path="/driver/documents" element={<DocumentUpload />} />
 //           <Route path="/driver/selfie" element={<SelfieVerification />} />
 //           <Route path="/driver/success" element={<CheckinSuccess />} />
@@ -74,7 +74,7 @@ const App = () => (
             }
           />
           <Route
-            path="/driver/details"
+            path="/driver/d"
             element={
               <GeoGuard>
                 <DriverDetails />
