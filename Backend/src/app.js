@@ -15,6 +15,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
+app.set("trust proxy", true);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/guard", guardRoutes);
 app.use("/api/admin", adminRoutes);

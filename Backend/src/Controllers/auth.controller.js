@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import asyncHandler from "../utils/asyncHandler.js";
-import prisma from "../Config/prisma.js";
+import prisma from "../Config/index.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
@@ -94,9 +94,6 @@ export const verifyOtp = asyncHandler(async (req, res) => {
         { expiresIn: "1h" }
     );
 
-    return res.status(200).json({
-        success: true,
-        data: { token },
-        message: "Login successful"
-    });
+    return new ApiResponse(200, { token }, "Login successful");
+
 });

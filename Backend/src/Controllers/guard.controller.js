@@ -1,5 +1,5 @@
 import asyncHandler from "../utils/asyncHandler.js";
-import prisma from "../Config/prisma.js";
+import prisma from "../Config/index.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { sendSMS } from "../utils/sendSms.js";
@@ -9,8 +9,6 @@ import crypto from "crypto";
 
 export const guardLogin = asyncHandler(async (req, res) => {
     const { phone } = req.body;
-    console.log(req.body.phone);
-
     const guard = await prisma.guard_Master.findUnique({
         where: {
             Mobile: phone   // must match schema exactly
@@ -29,7 +27,7 @@ export const guardLogin = asyncHandler(async (req, res) => {
             Mobile: "9399229814"
         },
         data: {
-            OTP: "9366",
+            OTP: otp,
             OTP_Expiry: new Date(Date.now() + 5 * 60 * 1000)
         }
     });
@@ -45,7 +43,6 @@ export const guardLogin = asyncHandler(async (req, res) => {
         OTPTemplate: process.env.OTP_TEMPLATE_ID
     });
 
-    return res.status(200).json(
-        new ApiResponse(200, null, "OTP sent successfully")
-    );
+    return new ApiResponse(200, null, "OTP sent successfully")
+
 });

@@ -186,9 +186,15 @@ const DriverDetails = () => {
     };
 
     const handleNext = () => {
-        if (lrNumber && mobile) {
-            navigate("/driver/documents");
-        }
+        if (!lrNumber || mobile.length !== 10) return;
+
+        sessionStorage.setItem("driverDetails", JSON.stringify({
+            doNumber,
+            lrNumber,
+            mobile
+        }));
+
+        navigate("/driver/documents");
     };
 
     const replayAudio = () => {
@@ -210,11 +216,7 @@ const DriverDetails = () => {
                 textHi="बेहतर ऑडियो अनुभव के लिए कृपया अपने डिवाइस की वॉल्यूम बढ़ाएं"
                 variant="warning"
             />
-
             <div className="page-content">
-
-
-
                 <>
                     <div className="mt-2 mb-2">
                         <div className="inline-block bg-primary/10 text-primary px-4 py-1.5 rounded-lg text-sm font-semibold mb-4">
@@ -229,7 +231,7 @@ const DriverDetails = () => {
                         />
 
                         <p className="text-sm text-muted-foreground mt-1 mb-4">
-                            Please enter your details to verify the trip
+                            Please enter your details to verification
                             <br />
                             यात्रा सत्यापित करने के लिए कृपया अपना विवरण दर्ज करें
                         </p>

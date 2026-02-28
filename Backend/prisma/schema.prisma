@@ -22,6 +22,16 @@ model Guard_Master {
 
   @@map("GUARD_MASTER")
 }
+model Security_Logs {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  ip        String?
+  latitude  Float?
+  longitude Float?
+  distance  Float?
+  reason    String?
+  createdAt DateTime @default(now())
+}
 
 model Driver_Checkin {
   Id                     Int      @id @default(autoincrement())
@@ -81,4 +91,15 @@ model Driver_Documents {
   @@map("DRIVER_DOCUMENTS")
   @@index([Driver_Checkin_Id])
   @@index([Verified_By])
+}
+
+model Driver_Temp_Upload {
+  Id          Int      @id @default(autoincrement())
+  Session_Id  String   @db.VarChar(100)
+  Doc_Type    String   @db.VarChar(50)
+  Image_Path  String   @db.VarChar(255)
+  Is_Selfie   Boolean  @default(false)
+  Created_At  DateTime @default(now())
+
+  @@index([Session_Id])
 }
