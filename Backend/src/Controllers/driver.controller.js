@@ -1,5 +1,3 @@
-
-
 // // const allowedDocTypes = [
 // //     "dl",
 // //     "rc",
@@ -71,8 +69,6 @@
 // //         });
 // //     }
 // // };
-
-
 
 // import prisma from "../Config/index.js";
 // import asyncHandler from "../utils/asyncHandler.js";
@@ -183,7 +179,6 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 
 export const uploadDoc = asyncHandler(async (req, res) => {
-
     if (!req.file) {
         throw new ApiError(400, "No file uploaded");
     }
@@ -198,7 +193,7 @@ export const uploadDoc = asyncHandler(async (req, res) => {
 
     // 1️⃣ Check if check-in exists
     const checkin = await prisma.driver_Checkin.findUnique({
-        where: { Id: checkinId }
+        where: { Id: checkinId },
     });
 
     if (!checkin) {
@@ -209,8 +204,8 @@ export const uploadDoc = asyncHandler(async (req, res) => {
     const existingDoc = await prisma.driver_Documents.findFirst({
         where: {
             Driver_Checkin_Id: checkinId,
-            Doc_Type: type
-        }
+            Doc_Type: type,
+        },
     });
 
     if (existingDoc) {
@@ -223,26 +218,18 @@ export const uploadDoc = asyncHandler(async (req, res) => {
             Driver_Checkin_Id: checkinId,
             Doc_Type: type,
             Image_Path: req.file.path,
-            Verified: false
-        }
+            Verified: false,
+        },
     });
 
-    return res.status(201).json(
-        new ApiResponse(
-            201,
-            document,
-            "Document inserted successfully"
-        )
-    );
+    return res
+        .status(201)
+        .json(new ApiResponse(201, document, "Document inserted successfully"));
 });
-
-
 
 const allowedDocTypes = ["dl", "rc", "insurance", "fitness"];
 
-
-// export const uploadTempDocument = asyncHandler(async (req, res) => { 
-
+// export const uploadTempDocument = asyncHandler(async (req, res) => {
 
 //     if (!req.file) {
 //         throw new ApiError(400, "No file uploaded");
@@ -328,8 +315,6 @@ const allowedDocTypes = ["dl", "rc", "insurance", "fitness"];
 //     console.log(sessionId);
 //     console.log(doNo, vehicleNo, driverName, mobile);
 
-
-
 //     if (!sessionId || !doNo || !vehicleNo || !driverName || !mobile) {
 //         throw new ApiError(400, "Missing required fields");
 //     }
@@ -403,11 +388,11 @@ const allowedDocTypes = ["dl", "rc", "insurance", "fitness"];
 // });
 
 import { saveFileLocally } from "../services/file.service.js";
-
-
+import fetchCsrfToken from "../services/fetchCsrfToken.service.js";
+import { ZGPAPI_URL } from "../constants.js";
+import insertZGP from "../utils/insertZGP.js";
 
 export const uploadTempDocument = asyncHandler(async (req, res) => {
-
     if (!req.file) {
         throw new ApiError(400, "No file uploaded");
     }
@@ -426,8 +411,8 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
         where: {
             Session_Id: sessionId,
             Doc_Type: type,
-            Is_Selfie: false
-        }
+            Is_Selfie: false,
+        },
     });
 
     if (existing) {
@@ -442,16 +427,13 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
             Session_Id: sessionId,
             Doc_Type: type,
             Image_Path: filePath,
-            Is_Selfie: false
-        }
+            Is_Selfie: false,
+        },
     });
 
-    return res.json(
-        new ApiResponse(200, null, "Document uploaded")
-    );
+    return res.json(new ApiResponse(200, null, "Document uploaded"));
 });
 export const uploadTempSelfie = asyncHandler(async (req, res) => {
-
     if (!req.file) {
         throw new ApiError(400, "No selfie uploaded");
     }
@@ -465,12 +447,12 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
         where: {
             Session_Id: sessionId,
-            Is_Selfie: true
-        }
+            Is_Selfie: true,
+        },
     });
 
     if (existingSelfie) {
-        throw new ApiError(409, "Selfie already uploaded");
+        throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
     }
 
     // 🔥 Save file manually
@@ -481,25 +463,30 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
             Session_Id: sessionId,
             Doc_Type: "selfie",
             Image_Path: filePath,
-            Is_Selfie: true
-        }
+            Is_Selfie: true,
+        },
     });
 
-    return res.json(
-        new ApiResponse(200, null, "Selfie uploaded")
-    );
+    return res.json(new ApiResponse(200, null, "Selfie uploaded"));
 });
 
 export const finalizeCheckin = asyncHandler(async (req, res) => {
-
     const { sessionId, doNo, vehicleNo, driverName, mobile } = req.body;
+    const payload = {
+        sessionId,
+        doNo,
+        vehicleNo,
+        driverName,
+        mobile,
+    };
+    //   console.log(payload);
 
     if (!sessionId || !doNo || !vehicleNo || !driverName || !mobile) {
-        throw new ApiError(400, "Missing required fields");
+        throw new ApiError(400, "कृपया सभी आवश्यक दस्तावेज़ अपलोड करें।");
     }
 
     const tempUploads = await prisma.driver_Temp_Upload.findMany({
-        where: { Session_Id: sessionId }
+        where: { Session_Id: sessionId },
     });
 
     if (tempUploads.length < 5) {
@@ -507,7 +494,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     }
 
     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
-    const uploadedTypes = tempUploads.map(d => d.Doc_Type);
+    const uploadedTypes = tempUploads.map((d) => d.Doc_Type);
 
     for (const doc of requiredDocs) {
         if (!uploadedTypes.includes(doc)) {
@@ -523,17 +510,70 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         where: {
             Do_No: doNo,
             Vehicle_No: vehicleNo,
-            Status: "CheckedIn"
-        }
+            Status: {
+                in: ["CheckedIn", "Reportin"],
+            },
+        },
     });
+    // const existing = await prisma.driver_Checkin.findFirst({
+    //     where: {
+    //         Vehicle_No: vehicleNo,
+    //         Status: {
+    //             in: ["CheckedIn", "Reportin"]
+    //         }
+    //     }
+    // });
 
     if (existing) {
-        throw new ApiError(409, "Driver already checked-in");
+        throw new ApiError(409, "आप पहले ही  रिपोर्ट इन कर लिया है।");
+    }
+    const secondaryURL =
+        "http://ktappdq.kritiindia.com:8010/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet";
+    //TODO: Remove http://ktappdq.kritiindia.com:8010 port will be 1081 for development and 8010 for production. Make it dynamic based on environment variable
+    // const tokenAndcookie = fetchCsrfToken(ZGPAPI_URL)
+
+    const tokenAndcookie = await fetchCsrfToken(secondaryURL);
+
+    const insertResult = await insertZGP(payload, tokenAndcookie);
+    if (!insertResult || !insertResult.success) {
+        throw new ApiError(
+            500,
+            insertResult?.message || "ZGP API failed or returned empty response"
+        );
     }
 
     // 🔥 TRANSACTION (Very Important)
-    const result = await prisma.$transaction(async (tx) => {
+    // const result = await prisma.$transaction(async (tx) => {
+    //     const checkin = await tx.driver_Checkin.create({
+    //         data: {
+    //             Do_No: doNo,
+    //             Vehicle_No: vehicleNo,
+    //             Driver_Name: driverName,
+    //             Mobile: mobile,
+    //             Status: "CheckedIn",
+    //             Entry_Time: new Date(),
+    //             Zgp: insertResult.responseData.Message || "N/A"
+    //         }
+    //     });
 
+    //     for (const upload of tempUploads) {
+    //         await tx.driver_Documents.create({
+    //             data: {
+    //                 Driver_Checkin_Id: checkin.Id,
+    //                 Doc_Type: upload.Doc_Type,
+    //                 Image_Path: upload.Image_Path,
+    //                 Verified: false
+    //             }
+    //         });
+    //     }
+
+    //     await tx.driver_Temp_Upload.deleteMany({
+    //         where: { Session_Id: sessionId }
+    //     });
+
+    //     return checkin;
+    // });
+    const result = await prisma.$transaction(async (tx) => {
         const checkin = await tx.driver_Checkin.create({
             data: {
                 Do_No: doNo,
@@ -541,29 +581,28 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
                 Driver_Name: driverName,
                 Mobile: mobile,
                 Status: "CheckedIn",
-                Entry_Time: new Date()
-            }
+                Entry_Time: new Date(),
+                Zgp: insertResult.responseData?.Message || "N/A",
+            },
         });
 
-        for (const upload of tempUploads) {
-            await tx.driver_Documents.create({
-                data: {
-                    Driver_Checkin_Id: checkin.Id,
-                    Doc_Type: upload.Doc_Type,
-                    Image_Path: upload.Image_Path,
-                    Verified: false
-                }
-            });
-        }
+        await tx.driver_Documents.createMany({
+            data: tempUploads.map((upload) => ({
+                Driver_Checkin_Id: checkin.Id,
+                Doc_Type: upload.Doc_Type,
+                Image_Path: upload.Image_Path,
+                Verified: false,
+            })),
+        });
 
         await tx.driver_Temp_Upload.deleteMany({
-            where: { Session_Id: sessionId }
+            where: { Session_Id: sessionId },
         });
 
         return checkin;
     });
 
-    return res.status(201).json(
-        new ApiResponse(201, result, "Check-in successful")
-    );
+    return res
+        .status(201)
+        .json(new ApiResponse(201, result, "Check-in successful"));
 });

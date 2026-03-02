@@ -640,7 +640,7 @@
 
 // export default DocumentUpload;
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
@@ -658,6 +658,7 @@ import {
 import StepIndicator from "@/components/StepIndicator";
 import InfoBanner from "@/components/InfoBanner";
 import AppHeader from "@/components/AppHeader";
+import usePageAudio from "@/hooks/usePageAudio";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -687,8 +688,13 @@ const DocumentUpload = () => {
     const [docs, setDocs] = useState({});
     const [showPicker, setShowPicker] = useState(null);
     const [currentDocKey, setCurrentDocKey] = useState(null);
+    const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
     const sessionId = getSessionId();
+ useEffect(() => {
+     const welcomeText = "कृपया apne दस्तावेज़ अपलोड करें";
+        speak(welcomeText);
+    }, [speak]);
 
     /* ========================= */
     /* OPEN PICKER */
@@ -795,7 +801,7 @@ const DocumentUpload = () => {
 
     return (
         <div className="mobile-container">
-            <AppHeader />
+            <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
 
             <div className="page-content">
                 <StepIndicator

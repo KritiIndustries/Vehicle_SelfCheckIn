@@ -318,6 +318,8 @@ import { Camera, RotateCcw } from "lucide-react";
 import selfieExample from "@/assets/selfie-example.jpg"
 import StepIndicator from "@/components/StepIndicator";
 import AppHeader from "@/components/AppHeader";
+import usePageAudio from "@/hooks/usePageAudio";
+import { toast } from "sonner";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -334,6 +336,7 @@ const SelfieVerification = () => {
     const [uploaded, setUploaded] = useState(false);
     const [progress, setProgress] = useState(0);
     const [timeLeft, setTimeLeft] = useState(300);
+    const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
     const sessionId = localStorage.getItem("driver_session");
 
@@ -347,6 +350,10 @@ const SelfieVerification = () => {
         }, 1000);
         return () => clearInterval(timer);
     }, []);
+    useEffect(() => {
+        const instructionText = "कृपया अपना सेल्फी अपलोड करें। सुनिश्चित करें कि आप खाली ट्रक के साथ खड़े हैं।";
+        speak(instructionText);
+    }, [toggleAudio]);
 
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
@@ -401,7 +408,8 @@ const SelfieVerification = () => {
             setUploaded(true);
 
         } catch (error) {
-            alert(error.response?.data?.message || "Selfie upload failed");
+            toast.error(error.response?.data?.message || "Selfie upload failed");
+            speak(error.response?.data?.message || "Selfie upload failed");
             setUploading(false);
         }
     };
@@ -414,27 +422,30 @@ const SelfieVerification = () => {
         try {
             let value = JSON.parse(sessionStorage.getItem("driverDetails"));
             console.log("Finalize response received", sessionId, value);
-            await axios.post(`${API}/api/driver/finalize`, {
+            const response = await axios.post(`${API}/api/driver/finalize`, {
                 sessionId,
                 doNo: value?.doNumber || null,
-                vehicleNo: "MP09AB1235",
-                driverName: "Test Driver1",
+                //TODO: get real vehicle number and driver name from session or previous steps instead of hardcoding
+                vehicleNo: "MP09AB0909",
+                driverName: "Test Driver4",
                 mobile: value?.mobile || null
             });
-
-
             localStorage.removeItem("driver_session");
 
-            navigate("/driver/success");
+            // Pass backend data to next screen
+            navigate("/driver/success", {
+                state: response.data.data
+            });
 
         } catch (error) {
-            alert(error.response?.data?.message || "Finalize failed");
+            toast.error(error.response?.data?.message || "Finalize failed");
+            speak(error.response?.data?.message || "Finalize failed");
         }
     };
 
     return (
         <div className="mobile-container">
-            <AppHeader />
+            <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
 
             {/* TIMER BAR */}
             <div className="bg-warning/15 text-warning text-sm font-semibold px-5 py-2 text-center">

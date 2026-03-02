@@ -1,18 +1,35 @@
 import { CheckCircle } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
+import { useLocation } from "react-router-dom";
+import usePageAudio from "@/hooks/usePageAudio";
+import { useEffect } from "react";
 
 const CheckinSuccess = () => {
+    const location = useLocation();
+    const data = location.state;
+
+    if (!data) {
+        return <div className="mobile-container">No data found</div>;
+    }
+    const [speak, audioEnabled, toggleAudio] = usePageAudio();
     const details = [
-        { label: "REFID", value: "RF-9988" },
-        { label: "ZGP", value: "ZGP-100200" },
-        { label: "Vehicle / वाहन", value: "MH 04 AB 1234" },
-        { label: "DO Number / डीओ नंबर", value: "DO-784512" },
-        { label: "Token Number / टोकन नंबर", value: "25" },
+        { label: "ZGP", value: data.Zgp || "-" },
+        { label: "Vehicle / वाहन", value: data.Vehicle_No },
+        { label: "DO Number / डीओ नंबर", value: data.Do_No },
+        { label: "Driver", value: data.Driver_Name },
+        { label: "Mobile", value: data.Mobile },
     ];
+    useEffect(() => {
+        if (data) {
+            const message = `रिपोर्टिंग सफल रही! आपका वेटिंग नंबर ${data.Id} है। कृपया गेट नंबर 1 पर जाएं।`;
+            speak(message);
+        }
+
+    })
 
     return (
         <div className="mobile-container">
-            <AppHeader />
+            <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
 
             <div className="page-content flex flex-col items-center justify-center flex-1">
 
@@ -58,7 +75,7 @@ const CheckinSuccess = () => {
                             className="text-5xl font-bold"
                             style={{ color: "hsl(var(--primary))" }}
                         >
-                            #24
+                            #{data.Id}
                         </span>
                         <p
                             className="text-sm mt-1"

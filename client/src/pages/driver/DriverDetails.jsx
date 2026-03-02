@@ -113,11 +113,13 @@
 //     };
 
 // export default DriverDetails;
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import InfoBanner from "@/components/InfoBanner";
 import StepIndicator from "@/components/StepIndicator";
+import { toast } from "sonner";
+import usePageAudio from "@/hooks/usePageAudio";
 
 const DriverDetails = () => {
     const navigate = useNavigate();
@@ -125,56 +127,35 @@ const DriverDetails = () => {
     const doValue = searchParams.get("DO");
 
 
+
     const [doNumber, setDoNumber] = useState(doValue || 0);
     const [lrNumber, setLrNumber] = useState("");
     const [mobile, setMobile] = useState("");
     const [doValidated, setDoValidated] = useState(true);
 
-    const utteranceRef = useRef(null);
-
-    /* ========================= */
-    /* AUDIO FUNCTION */
-    /* ========================= */
-
-    const speak = (text) => {
-        if (!text) return;
-
-        speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = "hi-IN";
-        utterance.rate = 1;
-        utterance.pitch = 1;
-
-        utteranceRef.current = utterance;
-        speechSynthesis.speak(utterance);
-    };
+    const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
     /* ========================= */
     /* AUTO AUDIO ON RENDER */
     /* ========================= */
 
     useEffect(() => {
-        const welcomeText =
-            "Kaasta Plant में आपका स्वागत है";
-
+        const welcomeText = "Kaasta Plant में आपका स्वागत है";
         speak(welcomeText);
-
-        return () => {
-            speechSynthesis.cancel();
-        };
-    }, []);
+    }, [speak]);
 
     /* ========================= */
     /* AUDIO AFTER DO VALIDATED */
     /* ========================= */
 
     useEffect(() => {
-        if (!doValidated) return;
+        if (!doValue) {
+            toast.error("कृपया डीलर से लिंक प्राप्त करें।.");
+            speak("कृपया डीलर से लिंक प्राप्त करें");
+            return;
+        }
 
-        const instructionText =
-            "कृपया अपना विवरण दर्ज करें";
-
+        const instructionText = "कृपया अपना विवरण दर्ज करें";
         speak(instructionText);
     }, [doValidated]);
 
@@ -196,7 +177,11 @@ const DriverDetails = () => {
             lrNumber,
             mobile
         }));
-
+        if (!doValue) {
+            toast.error("कृपया डीलर से लिंक प्राप्त करें।.");
+            speak("कृपया डीलर से लिंक प्राप्त करें");
+            return;
+        }
         navigate("/driver/documents");
     };
 
@@ -204,15 +189,13 @@ const DriverDetails = () => {
         if (!doValidated) {
             speak("Welcome to Kasta Plant. Kasta प्लांट में आपका स्वागत है");
         } else {
-            speak(
-                "कृपया अपना विवरण दर्ज करें"
-            );
+            speak("कृपया अपना विवरण दर्ज करें");
         }
     };
 
     return (
         <div className="mobile-container">
-            <AppHeader onReplay={replayAudio} />
+            <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
 
             <InfoBanner
                 text="Please increase your device volume for better audio"

@@ -1,6 +1,6 @@
-import asyncHandler from "../utils/asyncHandler";
+import axios from "axios";
 
-const fetchCsrfToken = asyncHandler(async (SAP_BASE_URL) => {
+const fetchCsrfToken = async (SAP_BASE_URL) => {
     const USERNAME = process.env.SAP_USERNAME;
     const PASSWORD = process.env.SAP_PASSWORD;
     const BASIC_AUTH = "Basic " + Buffer.from(`${USERNAME}:${PASSWORD}`).toString("base64");
@@ -18,7 +18,7 @@ const fetchCsrfToken = asyncHandler(async (SAP_BASE_URL) => {
         .join("; ");
 
     // console.log("✅ CSRF Token fetched successfully");
-    return { csrfToken, cookies };
+    return { csrfToken, cookies, BASIC_AUTH };
 
-});
+};
 export default fetchCsrfToken
