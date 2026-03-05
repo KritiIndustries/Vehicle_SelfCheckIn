@@ -43,7 +43,7 @@ export const guardLogin = asyncHandler(async (req, res) => {
         OTPTemplate: process.env.OTP_TEMPLATE_ID
     });
 
-    return new ApiResponse(200, null, "OTP sent successfully")
+    return res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"))
 
 });
 export const getCheckedinDetails = asyncHandler(async (req, res) => {

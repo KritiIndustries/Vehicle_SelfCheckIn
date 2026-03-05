@@ -694,7 +694,7 @@ const DocumentUpload = () => {
  useEffect(() => {
      const welcomeText = "कृपया apne दस्तावेज़ अपलोड करें";
         speak(welcomeText);
-    }, [speak]);
+    }, [speak,toggleAudio]);
 
     /* ========================= */
     /* OPEN PICKER */

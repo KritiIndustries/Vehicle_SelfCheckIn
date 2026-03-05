@@ -353,7 +353,7 @@ const SelfieVerification = () => {
     useEffect(() => {
         const instructionText = "कृपया अपना सेल्फी अपलोड करें। सुनिश्चित करें कि आप खाली ट्रक के साथ खड़े हैं।";
         speak(instructionText);
-    }, [toggleAudio]);
+    }, [toggleAudio,speak]);
 
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;

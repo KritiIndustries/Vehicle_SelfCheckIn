@@ -46,6 +46,7 @@
 
 import { useNavigate } from "react-router-dom";
 import { Truck, Shield } from "lucide-react";
+import logo from "@/assets/Kasta_Logo.png";
 
 const Index = () => {
     const navigate = useNavigate();
@@ -54,14 +55,14 @@ const Index = () => {
         <div className="mobile-container">
             <div className="flex-1 flex flex-col items-center justify-center px-5">
                 <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mb-4">
-                    <span className="text-primary-foreground font-bold text-2xl">KP</span>
+                    <img src={logo} alt="Kasta Plant Logo" className="w-full h-full object-contain" />
                 </div>
                 <h1 className="text-2xl font-bold text-foreground mb-1">Kasta Plant</h1>
                 <p className="text-sm text-muted-foreground mb-10">कास्ता प्लांट में आपका स्वागत है</p>
 
                 <div className="w-full space-y-4">
                     <button
-                        onClick={() => navigate("/driver/location")}
+                        onClick={() => navigate("/driver/d")}
                         className="btn-primary-full text-lg py-5"
                     >
                         <Truck className="w-6 h-6" />

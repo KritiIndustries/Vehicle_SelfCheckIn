@@ -25,7 +25,7 @@ const CheckinSuccess = () => {
             speak(message);
         }
 
-    })
+    }, [data, speak,toggleAudio]);
 
     return (
         <div className="mobile-container">

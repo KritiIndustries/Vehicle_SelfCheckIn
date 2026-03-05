@@ -50,85 +50,87 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster position="top-center" richColors closeButton />
-      <BrowserRouter>
-        <Routes>
+      <GeoGuard>
+        <BrowserRouter>
+          <Routes>
 
-          {/* PUBLIC ROUTE */}
-          <Route path="/" element={<Index />} />
+            {/* PUBLIC ROUTE */}
+            <Route path="/" element={<Index />} />
 
-          {/* ================= DRIVER ROUTES (GEOFENCED) ================= */}
-          <Route
-            path="/driver/login"
-            element={
-              <GeoGuard>
-                <DriverLogin />
-              </GeoGuard>
-            }
-          />
-          <Route
-            path="/driver/location"
-            element={
-              <GeoGuard>
-                <LocationCheck />
-              </GeoGuard>
-            }
-          />
-          <Route
-            path="/driver/d"
-            element={
-              <GeoGuard>
-                <DriverDetails />
-              </GeoGuard>
-            }
-          />
-          <Route
-            path="/driver/documents"
-            element={
-              <GeoGuard>
-                <DocumentUpload />
-              </GeoGuard>
-            }
-          />
-          <Route
-            path="/driver/selfie"
-            element={
-              <GeoGuard>
-                <SelfieVerification />
-              </GeoGuard>
-            }
-          />
-          <Route
-            path="/driver/success"
-            element={
-              <GeoGuard>
-                <CheckinSuccess />
-              </GeoGuard>
-            }
-          />
+            {/* ================= DRIVER ROUTES (GEOFENCED) ================= */}
+            <Route
+              path="/driver/login"
+              element={
+                <GeoGuard>
+                  <DriverLogin />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/driver/location"
+              element={
+                <GeoGuard>
+                  <LocationCheck />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/driver/d"
+              element={
+                <GeoGuard>
+                  <DriverDetails />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/driver/documents"
+              element={
+                <GeoGuard>
+                  <DocumentUpload />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/driver/selfie"
+              element={
+                <GeoGuard>
+                  <SelfieVerification />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/driver/success"
+              element={
+                <GeoGuard>
+                  <CheckinSuccess />
+                </GeoGuard>
+              }
+            />
 
-          {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
-          <Route
-            path="/guard/login"
-            element={
-              <GeoGuard>
-                <GuardLogin />
-              </GeoGuard>
-            }
-          />
-          <Route
-            path="/guard/dashboard"
-            element={
-              <GeoGuard>
-                <GuardDashboard />
-              </GeoGuard>
-            }
-          />
+            {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
+            <Route
+              path="/guard/login"
+              element={
+                <GeoGuard>
+                  <GuardLogin />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/guard/dashboard"
+              element={
+                <GeoGuard>
+                  <GuardDashboard />
+                </GeoGuard>
+              }
+            />
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
 
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </GeoGuard>
     </TooltipProvider>
   </QueryClientProvider>
 );

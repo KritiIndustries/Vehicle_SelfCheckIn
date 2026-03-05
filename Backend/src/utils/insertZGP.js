@@ -53,6 +53,7 @@ const insertZGP = async (data, token) => {
             ReportInDate: todayStr,
             ReportInTime: timeStr,
             VehicleRegNumb: data.vehicleNo,
+            //TODO:Trailer number is not availble
             TrailerRegNumb: "MP04TR5681",
             DriverName: data.driverName,
             TransporterCode: "92000001",

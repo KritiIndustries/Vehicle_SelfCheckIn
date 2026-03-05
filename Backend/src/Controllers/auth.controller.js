@@ -94,6 +94,6 @@ export const verifyOtp = asyncHandler(async (req, res) => {
         { expiresIn: "1h" }
     );
 
-    return new ApiResponse(200, { token }, "Login successful");
+    return res.status(200).json(new ApiResponse(200, { token }, "Login successful"));
 
 });

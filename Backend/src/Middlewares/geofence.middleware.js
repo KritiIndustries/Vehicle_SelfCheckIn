@@ -10,20 +10,25 @@ const RADIUS = 500;
 
 const geofenceMiddleware = async (req, res, next) => {
     try {
-        const { latitude, longitude } = req.body;
+        const { latitude, longitude, lat, lng } = req.body;
+        const latVal = latitude ?? lat;
+        const lngVal = longitude ?? lng;
 
-        if (!latitude || !longitude) {
+        if (latVal == null || lngVal == null) {
             return res.status(400).json({
                 success: false,
                 message: "Location required",
             });
         }
 
+        const parsedLat = parseFloat(latVal);
+        const parsedLng = parseFloat(lngVal);
+
         const distance = calculateDistance(
             PLANT_LAT,
             PLANT_LNG,
-            parseFloat(latitude),
-            parseFloat(longitude)
+            parsedLat,
+            parsedLng
         );
 
         if (distance > RADIUS) {
@@ -32,8 +37,8 @@ const geofenceMiddleware = async (req, res, next) => {
                 data: {
                     userId: req.user?.id || null,
                     ip: req.ip,
-                    latitude: parseFloat(latitude),
-                    longitude: parseFloat(longitude),
+                    latitude: parsedLat,
+                    longitude: parsedLng,
                     distance,
                     reason: "Outside Geofence",
                 },

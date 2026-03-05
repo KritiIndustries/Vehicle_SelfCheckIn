@@ -18,3 +18,25 @@ export const getCurrentLocation = () => {
         );
     });
 };
+
+export const validateCoordinates = (coords) => {
+    if (!coords) return false;
+    const lat = parseFloat(coords.lat ?? coords.latitude);
+    const lng = parseFloat(coords.lng ?? coords.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+    if (lat < -90 || lat > 90) return false;
+    if (lng < -180 || lng > 180) return false;
+    return true;
+};
+
+export const normalizeForApi = (coords) => {
+    if (!validateCoordinates(coords)) {
+        throw new Error('Invalid coordinates');
+    }
+
+    return {
+        latitude: parseFloat(coords.lat ?? coords.latitude),
+        longitude: parseFloat(coords.lng ?? coords.longitude),
+    };
+};
