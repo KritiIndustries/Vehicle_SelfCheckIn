@@ -6,8 +6,7 @@ const asyncHandler = (fn) => async (req, res, next) => {
         res.status(statusCode).json({
             success: false,
             message: error.message,
-            data: "Async handler me ayi hai Error"
-
+            stack: error.stack ? error.stack : null
         })
     }
 }

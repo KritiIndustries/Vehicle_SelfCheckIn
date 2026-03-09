@@ -54,8 +54,8 @@ const Index = () => {
     return (
         <div className="mobile-container">
             <div className="flex-1 flex flex-col items-center justify-center px-5">
-                <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mb-4">
-                    <img src={logo} alt="Kasta Plant Logo" className="w-full h-full object-contain" />
+                <div className="w-25 h-16 bg-black rounded-2xl flex items-center justify-center mb-4">
+                    <img src={logo} alt="Kasta Plant Logo" className="w-full h-full  object-contain" />
                 </div>
                 <h1 className="text-2xl font-bold text-foreground mb-1">Kasta Plant</h1>
                 <p className="text-sm text-muted-foreground mb-10">कास्ता प्लांट में आपका स्वागत है</p>

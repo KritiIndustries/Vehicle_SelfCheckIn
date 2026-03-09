@@ -33,3 +33,4 @@ dist-ssr
 *.sw?
 
 /generated/prisma
+server_access.txt
