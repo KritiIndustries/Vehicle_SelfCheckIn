@@ -227,7 +227,7 @@ export const uploadDoc = asyncHandler(async (req, res) => {
         .json(new ApiResponse(201, document, "Document inserted successfully"));
 });
 
-const allowedDocTypes = ["dl", "rc", "insurance", "fitness"];
+const allowedDocTypes = ["dl", "license", "rc", "insurance", "fitness"];
 
 // export const uploadTempDocument = asyncHandler(async (req, res) => {
 
@@ -387,12 +387,66 @@ const allowedDocTypes = ["dl", "rc", "insurance", "fitness"];
 //     );
 // });
 
-import { saveFileLocally } from "../services/file.service.js";
 import fetchCsrfToken from "../services/fetchCsrfToken.service.js";
 import { ZGPAPI_URL } from "../constants.js";
 import insertZGP from "../utils/insertZGP.js";
+import { uploadToS3 } from "../services/s3.service.js";
+
+// export const uploadTempDocument = asyncHandler(async (req, res) => {
+//     if (!req.file) {
+//         throw new ApiError(400, "No file uploaded");
+//     }
+
+//     const { sessionId, type } = req.body;
+
+//     if (!sessionId || !type) {
+//         throw new ApiError(400, "Session ID and document type required");
+//     }
+
+//     if (!allowedDocTypes.includes(type)) {
+//         throw new ApiError(400, "Invalid document type");
+//     }
+
+//     const existing = await prisma.driver_Temp_Upload.findFirst({
+//         where: {
+//             Session_Id: sessionId,
+//             Doc_Type: type,
+//             Is_Selfie: false,
+//         },
+//     });
+
+//     if (existing) {
+//         throw new ApiError(409, "Document already uploaded");
+//     }
+
+//     // 🔥 Save file manually
+//     const filePath = await saveFileLocally(req.file);
+//     console.log("Ready To Upload");
+
+//     const url = await uploadToS3(req.file);
+//     console.log("URL", url);
+
+//     if (url) {
+//         console.log("Uploading");
+
+//         return res.json(new ApiResponse(200, { fileUrl: url }, "Document uploaded"));
+//     }
+
+//     await prisma.driver_Temp_Upload.create({
+//         data: {
+//             Session_Id: sessionId,
+//             Doc_Type: type,
+//             Image_Path: filePath,
+//             Is_Selfie: false,
+//         },
+//     });
+
+//     return res.json(new ApiResponse(200, { fileUrl: url }, "Document uploaded"));
+// });
+
 
 export const uploadTempDocument = asyncHandler(async (req, res) => {
+
     if (!req.file) {
         throw new ApiError(400, "No file uploaded");
     }
@@ -419,19 +473,93 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Document already uploaded");
     }
 
-    // 🔥 Save file manually
-    const filePath = await saveFileLocally(req.file);
+    const url = await uploadToS3(req.file);
 
     await prisma.driver_Temp_Upload.create({
         data: {
             Session_Id: sessionId,
             Doc_Type: type,
-            Image_Path: filePath,
+            Image_Path: url,
             Is_Selfie: false,
         },
     });
 
-    return res.json(new ApiResponse(200, null, "Document uploaded"));
+    return res.json(
+        new ApiResponse(200, { fileUrl: url }, "Document uploaded")
+    );
+});
+
+export const uploadTempDocuments = asyncHandler(async (req, res) => {
+    // Expecting multipart/form-data with files under `documents` and a `types` field
+    // `types` should be an array (or JSON string) matching the order of files: ["dl","rc","insurance","fitness"]
+    if (!req.files || req.files.length === 0) {
+        throw new ApiError(400, "No files uploaded");
+    }
+
+    const { sessionId } = req.body;
+
+    if (!sessionId) {
+        throw new ApiError(400, "Session ID required");
+    }
+
+    let types = req.body.types;
+
+    if (!types) {
+        throw new ApiError(400, "Types array required");
+    }
+
+    if (typeof types === "string") {
+        // try JSON parse, else split by comma
+        try {
+            types = JSON.parse(types);
+        } catch (e) {
+            types = types.split(",").map((t) => t.trim()).filter(Boolean);
+        }
+    }
+
+    if (!Array.isArray(types) || types.length !== req.files.length) {
+        throw new ApiError(400, "Types count must match number of uploaded files");
+    }
+
+    const uploaded = [];
+
+    for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const type = types[i];
+
+        if (!allowedDocTypes.includes(type)) {
+            throw new ApiError(400, `Invalid document type: ${type}`);
+        }
+
+        // Prevent duplicate in temp
+        const existing = await prisma.driver_Temp_Upload.findFirst({
+            where: {
+                Session_Id: sessionId,
+                Doc_Type: type,
+                Is_Selfie: false,
+            },
+        });
+
+        if (existing) {
+            throw new ApiError(409, `Document already uploaded: ${type}`);
+        }
+
+        // Upload to S3 (sequential as requested)
+        const url = await uploadToS3(file);
+
+        await prisma.driver_Temp_Upload.create({
+            data: {
+                Session_Id: sessionId,
+                Doc_Type: type,
+                Image_Path: url,
+                Is_Selfie: false,
+            },
+        });
+
+        uploaded.push({ type, url });
+    }
+
+    return res.json(new ApiResponse(200, { files: uploaded }, "Documents uploaded"));
 });
 export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!req.file) {
@@ -455,29 +583,30 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
     }
 
-    // 🔥 Save file manually
-    const filePath = await saveFileLocally(req.file);
+    // Upload selfie to S3 and store URL
+    const url = await uploadToS3(req.file);
 
     await prisma.driver_Temp_Upload.create({
         data: {
             Session_Id: sessionId,
             Doc_Type: "selfie",
-            Image_Path: filePath,
+            Image_Path: url,
             Is_Selfie: true,
         },
     });
 
-    return res.json(new ApiResponse(200, null, "Selfie uploaded"));
+    return res.json(new ApiResponse(200, { fileUrl: url }, "Selfie uploaded"));
 });
 
 export const finalizeCheckin = asyncHandler(async (req, res) => {
-    const { sessionId, doNo, vehicleNo, driverName, mobile } = req.body;
+    const { sessionId, doNo, vehicleNo, driverName, mobile, lrNumber } = req.body;
     const payload = {
         sessionId,
         doNo,
         vehicleNo,
         driverName,
         mobile,
+        lrNumber
     };
     //   console.log(payload);
 
@@ -509,10 +638,6 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     const existing = await prisma.driver_Checkin.findFirst({
         where: {
             Do_No: doNo,
-            Vehicle_No: vehicleNo,
-            Status: {
-                in: ["CheckedIn", "Reportin"],
-            },
         },
     });
     // const existing = await prisma.driver_Checkin.findFirst({

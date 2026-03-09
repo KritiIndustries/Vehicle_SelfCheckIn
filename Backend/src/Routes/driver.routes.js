@@ -2,7 +2,7 @@ import { Router } from "express";
 import authMiddleware from "../Middlewares/authMiddleware.js";
 import ipRestrictionMiddleware from "../Middlewares/ipRestriction.middleware.js";
 import geofenceMiddleware from "../Middlewares/geofence.middleware.js";
-import { finalizeCheckin, uploadDoc, uploadTempDocument, uploadTempSelfie } from "../Controllers/driver.controller.js";
+import { finalizeCheckin, uploadDoc, uploadTempDocument, uploadTempSelfie, uploadTempDocuments } from "../Controllers/driver.controller.js";
 import { upload } from "../Middlewares/multer.middleware.js";
 import multer from "multer";
 const router = Router();
@@ -19,7 +19,7 @@ router.post(
     "/upload-doc",
     (req, res, next) => {
 
-        upload.single("document")(req, res, function (err) {
+        upload.array("documents", 4)(req, res, function (err) {
 
             if (err instanceof multer.MulterError) {
                 return res.status(400).json({
@@ -39,8 +39,33 @@ router.post(
         });
 
     },
-    uploadTempDocument
+    uploadTempDocuments
+
 );
 router.post("/upload-selfie", upload.single("selfie"), uploadTempSelfie);
+router.post(
+    "/upload-docs",
+    (req, res, next) => {
+        // accept up to 4 files under `documents`
+        upload.array("documents", 4)(req, res, function (err) {
+            if (err instanceof multer.MulterError) {
+                return res.status(400).json({
+                    success: false,
+                    message: err.message,
+                });
+            }
+
+            if (err) {
+                return res.status(400).json({
+                    success: false,
+                    message: err.message,
+                });
+            }
+
+            next();
+        });
+    },
+    uploadTempDocuments
+);
 router.post("/finalize", finalizeCheckin);
 export default router;

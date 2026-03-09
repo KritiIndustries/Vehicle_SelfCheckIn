@@ -353,7 +353,7 @@ const SelfieVerification = () => {
     useEffect(() => {
         const instructionText = "कृपया अपना सेल्फी अपलोड करें। सुनिश्चित करें कि आप खाली ट्रक के साथ खड़े हैं।";
         speak(instructionText);
-    }, [toggleAudio,speak]);
+    }, [toggleAudio, speak]);
 
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
@@ -428,7 +428,9 @@ const SelfieVerification = () => {
                 //TODO: get real vehicle number and driver name from session or previous steps instead of hardcoding
                 vehicleNo: "MP09AB0909",
                 driverName: "Test Driver4",
-                mobile: value?.mobile || null
+                mobile: value?.mobile || null,
+                lrNumber: value?.lrNumber || null,
+
             });
             localStorage.removeItem("driver_session");
 

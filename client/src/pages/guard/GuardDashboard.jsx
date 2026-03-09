@@ -209,6 +209,7 @@ import {
     ChevronRight,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
+import { toast } from "sonner";
 
 const mockVehicles = [
     { id: "1", token: 24, vehicleNo: "MH 04 AB 1234", driverName: "Rajesh Kumar", doNumber: "DO-784512", rfid: "RF-9988", status: "waiting" },
@@ -220,6 +221,7 @@ const mockVehicles = [
 
 import axios from "axios";
 import formatApiDate from "@/services/formatApiDate.service";
+import { toast } from "sonner";
 const API = import.meta.env.VITE_API_BASE_URL;;
 export default function GuardDashboard() {
     const [vehicles, setVehicles] = useState([]);
@@ -271,7 +273,7 @@ export default function GuardDashboard() {
             fetchVehicles();
             setSelectedVehicle(null);
         } catch (err) {
-            alert("Approval failed");
+            toast.error("Approval failed");
         }
     };
 
@@ -281,7 +283,7 @@ export default function GuardDashboard() {
             fetchVehicles();
             setSelectedVehicle(null);
         } catch (err) {
-            alert("Checkout failed");
+            toast.error("Checkout failed");
         }
     };
 
