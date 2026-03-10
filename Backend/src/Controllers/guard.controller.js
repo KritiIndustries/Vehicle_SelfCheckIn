@@ -50,7 +50,7 @@ export const getCheckedinDetails = asyncHandler(async (req, res) => {
 
     const details = await prisma.driver_Checkin.findMany({
         where: {
-            Status: "CheckedIn"
+            Status: "ReportIn"
         },
         orderBy: {
             Entry_Time: "desc"

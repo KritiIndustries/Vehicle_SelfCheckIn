@@ -1,177 +1,3 @@
-// // const allowedDocTypes = [
-// //     "dl",
-// //     "rc",
-// //     "insurance",
-// //     "fitness",
-// // ];
-
-// // export const uploadDoc = async (req, res) => {
-// //     try {
-// //         if (!req.file) {
-// //             return res.status(400).json({
-// //                 success: false,
-// //                 message: "No file uploaded",
-// //             });
-// //         }
-
-// //         const { driverCheckinId, type, latitude, longitude } = req.body;
-
-// //         if (!driverCheckinId || !type) {
-// //             return res.status(400).json({
-// //                 success: false,
-// //                 message: "Driver_Checkin_Id and type required",
-// //             });
-// //         }
-
-// //         if (!allowedDocTypes.includes(type)) {
-// //             return res.status(400).json({
-// //                 success: false,
-// //                 message: "Invalid document type",
-// //             });
-// //         }
-
-// //         // 1️⃣ Verify Driver_Checkin exists
-// //         const checkin = await prisma.driver_Checkin.findUnique({
-// //             where: { Id: parseInt(driverCheckinId) },
-// //         });
-
-// //         if (!checkin) {
-// //             return res.status(404).json({
-// //                 success: false,
-// //                 message: "Driver check-in not found",
-// //             });
-// //         }
-
-// //         // 2️⃣ Optional: enforce plant geo check again here if needed
-
-// //         // 3️⃣ Save Document
-// //         const document = await prisma.driver_Documents.create({
-// //             data: {
-// //                 Driver_Checkin_Id: checkin.Id,
-// //                 Doc_Type: type,
-// //                 Image_Path: req.file.path,
-// //                 Verified: false,
-// //             },
-// //         });
-
-// //         return res.status(201).json({
-// //             success: true,
-// //             message: "Document uploaded successfully",
-// //             data: document,
-// //         });
-
-// //     } catch (error) {
-// //         console.error("UploadDoc Error:", error);
-
-// //         return res.status(500).json({
-// //             success: false,
-// //             message: "Document upload failed",
-// //         });
-// //     }
-// // };
-
-// import prisma from "../Config/index.js";
-// import asyncHandler from "../utils/asyncHandler.js";
-// import ApiError from "../utils/ApiError.js";
-// import ApiResponse from "../utils/ApiResponse.js";
-
-// const requiredDocTypes = ["dl", "rc", "insurance", "fitness"];
-
-// export const uploadDoc = asyncHandler(async (req, res) => {
-
-//     if (!req.file) {
-//         throw new ApiError(400, "No file uploaded");
-//     }
-
-//     const { token, type, latitude, longitude } = req.body;
-
-//     if (!type) {
-//         throw new ApiError(400, "Token and document type required");
-//     }
-
-//     if (!requiredDocTypes.includes(type)) {
-//         throw new ApiError(400, "Invalid document type");
-//     }
-
-//     // 1️⃣ Find checkin using secure token
-//     const checkin = await prisma.driver_Checkin.findUnique({
-//         where: { Token: token },
-//         include: { Documents: true },
-//     });
-
-//     if (!checkin) {
-//         throw new ApiError(404, "Invalid check-in token");
-//     }
-
-//     // 2️⃣ Prevent upload if already completed
-//     if (checkin.Status !== "Pending") {
-//         throw new ApiError(400, "Upload not allowed after check-in completion");
-//     }
-
-//     // 3️⃣ Prevent duplicate document type
-//     const duplicate = checkin.Documents.find(
-//         (doc) => doc.Doc_Type === type
-//     );
-
-//     if (duplicate) {
-//         throw new ApiError(409, "Document already uploaded");
-//     }
-
-//     // 4️⃣ Store GPS (only first time or update)
-//     if (latitude && longitude) {
-//         await prisma.driver_Checkin.update({
-//             where: { Id: checkin.Id },
-//             data: {
-//                 Latitude: parseFloat(latitude),
-//                 Longitude: parseFloat(longitude),
-//             },
-//         });
-//     }
-
-//     // 5️⃣ Save document
-//     await prisma.driver_Documents.create({
-//         data: {
-//             Driver_Checkin_Id: checkin.Id,
-//             Doc_Type: type,
-//             Image_Path: req.file.path,
-//             Verified: false,
-//         },
-//     });
-
-//     // 6️⃣ Check if all required documents uploaded
-//     const updatedDocs = await prisma.driver_Documents.findMany({
-//         where: { Driver_Checkin_Id: checkin.Id },
-//     });
-
-//     const uploadedTypes = updatedDocs.map((d) => d.Doc_Type);
-
-//     const allUploaded = requiredDocTypes.every((docType) =>
-//         uploadedTypes.includes(docType)
-//     );
-
-//     if (allUploaded) {
-//         await prisma.driver_Checkin.update({
-//             where: { Id: checkin.Id },
-//             data: {
-//                 Status: "CheckedIn",
-//                 Entry_Time: new Date(),
-//             },
-//         });
-//     }
-
-//     return res.status(201).json(
-//         new ApiResponse(
-//             201,
-//             {
-//                 checkinId: checkin.Id,
-//                 status: allUploaded ? "CheckedIn" : "Pending"
-//             },
-//             allUploaded
-//                 ? "All documents uploaded. Driver checked in."
-//                 : "Document uploaded successfully"
-//         )
-//     );
-// });
 
 import prisma from "../Config/index.js";
 import asyncHandler from "../utils/asyncHandler.js";
@@ -226,7 +52,6 @@ export const uploadDoc = asyncHandler(async (req, res) => {
         .status(201)
         .json(new ApiResponse(201, document, "Document inserted successfully"));
 });
-
 const allowedDocTypes = ["dl", "license", "rc", "insurance", "fitness"];
 
 // export const uploadTempDocument = asyncHandler(async (req, res) => {
@@ -391,6 +216,12 @@ import fetchCsrfToken from "../services/fetchCsrfToken.service.js";
 import { ZGPAPI_URL } from "../constants.js";
 import insertZGP from "../utils/insertZGP.js";
 import { uploadToS3 } from "../services/s3.service.js";
+import { extractTextFromPdf, extractTextFromS3Url } from "../services/textract.service.js";
+import { ensureImageQuality } from "../services/imageQuality.service.js";
+import parseDrivingLicense from "../services/parsers/parseDrivingLicense.js";
+import parseRC from "../services/parsers/parseRC.js";
+import parseFitness from "../services/parsers/parseFitness.js";
+import parseInsurance from "../services/parsers/parseInsurance.js";
 
 // export const uploadTempDocument = asyncHandler(async (req, res) => {
 //     if (!req.file) {
@@ -473,6 +304,10 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Document already uploaded");
     }
 
+    if (req.file.mimetype.startsWith("image/")) {
+        await ensureImageQuality(req.file.buffer);
+    }
+
     const url = await uploadToS3(req.file);
 
     await prisma.driver_Temp_Upload.create({
@@ -489,63 +324,258 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
     );
 });
 
-export const uploadTempDocuments = asyncHandler(async (req, res) => {
-    // Expecting multipart/form-data with files under `documents` and a `types` field
-    // `types` should be an array (or JSON string) matching the order of files: ["dl","rc","insurance","fitness"]
-    if (!req.files || req.files.length === 0) {
-        throw new ApiError(400, "No files uploaded");
-    }
+// export const uploadTempDocuments = asyncHandler(async (req, res) => {
+//     // Expecting multipart/form-data with files under `documents` and a `types` field
+//     // `types` should be an array (or JSON string) matching the order of files: ["dl","rc","insurance","fitness"]
+//     if (!req.files || req.files.length === 0) {
+//         throw new ApiError(400, "No files uploaded");
+//     }
 
-    const { sessionId } = req.body;
+//     const { sessionId } = req.body;
 
-    if (!sessionId) {
-        throw new ApiError(400, "Session ID required");
-    }
+//     if (!sessionId) {
+//         throw new ApiError(400, "Session ID required");
+//     }
 
-    let types = req.body.types;
+//     let types = req.body.types;
 
-    if (!types) {
-        throw new ApiError(400, "Types array required");
-    }
+//     if (!types) {
+//         throw new ApiError(400, "Types array required");
+//     }
 
-    if (typeof types === "string") {
-        // try JSON parse, else split by comma
-        try {
-            types = JSON.parse(types);
-        } catch (e) {
-            types = types.split(",").map((t) => t.trim()).filter(Boolean);
+//     if (typeof types === "string") {
+//         // try JSON parse, else split by comma
+//         try {
+//             types = JSON.parse(types);
+//         } catch (e) {
+//             types = types.split(",").map((t) => t.trim()).filter(Boolean);
+//         }
+//     }
+
+//     if (!Array.isArray(types) || types.length !== req.files.length) {
+//         throw new ApiError(400, "Types count must match number of uploaded files");
+//     }
+
+//     const uploaded = [];
+
+//     for (let i = 0; i < req.files.length; i++) {
+//         const file = req.files[i];
+//         const type = types[i];
+
+//         if (!allowedDocTypes.includes(type)) {
+//             throw new ApiError(400, `Invalid document type: ${type}`);
+//         }
+
+//         // Prevent duplicate in temp
+//         const existing = await prisma.driver_Temp_Upload.findFirst({
+//             where: {
+//                 Session_Id: sessionId,
+//                 Doc_Type: type,
+//                 Is_Selfie: false,
+//             },
+//         });
+
+//         if (existing) {
+//             throw new ApiError(409, `Document already uploaded: ${type}`);
+//         }
+
+//         // Upload to S3 (sequential as requested)
+//         const url = await uploadToS3(file);
+
+//         await prisma.driver_Temp_Upload.create({
+//             data: {
+//                 Session_Id: sessionId,
+//                 Doc_Type: type,
+//                 Image_Path: url,
+//                 Is_Selfie: false,
+//             },
+//         });
+
+//         uploaded.push({ type, url });
+//     }
+
+//     return res.json(new ApiResponse(200, { files: uploaded }, "Documents uploaded"));
+// });
+
+
+const parseDate = (value) => {
+    if (!value || typeof value !== "string") return null;
+
+    // Support formats like DD-MM-YYYY or DD/MM/YYYY
+    const parts = value.split(/[-/.\s]+/).filter(Boolean);
+    if (parts.length === 3) {
+        const [d, m, y] = parts.map((p) => parseInt(p, 10));
+        if (!Number.isNaN(d) && !Number.isNaN(m) && !Number.isNaN(y)) {
+            const year = y < 100 ? 2000 + y : y;
+            return new Date(year, m - 1, d);
         }
     }
 
-    if (!Array.isArray(types) || types.length !== req.files.length) {
-        throw new ApiError(400, "Types count must match number of uploaded files");
+    const direct = new Date(value);
+    return Number.isNaN(direct.getTime()) ? null : direct;
+};
+
+// const extractFieldsFromLines = (lines = [], type) => {
+//     const text = lines.join(" ");
+//     const dateMatch = text.match(/\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b/);
+//     const firstDate = dateMatch ? dateMatch[1] : null;
+
+//     if (type === "dl" || type === "license") {
+//         const licenseMatch =
+//             text.match(/[A-Z]{2}\d{2}[A-Z0-9\-\/]*\d+/) ||
+//             text.match(/[A-Z0-9]+[-/][A-Z0-9\-\/]+/);
+
+//         const nameLine =
+//             lines.find((l) => /name/i.test(l)) ||
+//             lines.find((l) => /^[A-Z ]{3,}$/.test(l.trim()));
+
+//         return {
+//             documentType: "drivingLicense",
+//             licenseNo: licenseMatch ? licenseMatch[0] : null,
+//             name: nameLine ? nameLine.replace(/name[:\-]*/i, "").trim() : null,
+//             expiryDate: firstDate,
+//         };
+//     }
+
+//     if (type === "insurance") {
+//         const policyMatch = text.match(/\b[PA]\w{5,}\b/);
+
+//         return {
+//             documentType: "insurance",
+//             policyNo: policyMatch ? policyMatch[0] : null,
+//             expiryDate: firstDate,
+//         };
+//     }
+
+//     if (type === "rc") {
+//         const vehicleMatch = text.match(
+//             /\b[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}\b/
+//         );
+//         const chassisMatch = text.match(/\b[0-9A-Z]{10,}\b/);
+
+//         return {
+//             documentType: "vehicleRC",
+//             vehicleNo: vehicleMatch ? vehicleMatch[0] : null,
+//             chassisNo: chassisMatch ? chassisMatch[0] : null,
+//             expiryDate: firstDate,
+//         };
+//     }
+
+//     if (type === "fitness") {
+//         return {
+//             documentType: "fitness",
+//             expiryDate: firstDate,
+//         };
+//     }
+
+//     return {
+//         documentType: type,
+//     };
+// };
+
+
+// const extractFieldsFromLines = (lines = [], type) => {
+
+//     const text = lines.join(" ").toUpperCase();
+
+//     const dateRegex = /\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b/g;
+//     const dates = [...text.matchAll(dateRegex)].map(d => parseDate(d[1]));
+
+//     if (type === "dl" || type === "license") {
+
+//         const licenseRegex =
+//             /\b[A-Z]{2}\d{2}[A-Z]?[- ]?\d{4}[- ]?\d{7}\b|\bDL\d{10,}\b/;
+
+//         const licenseNo = text.match(licenseRegex)?.[0] || null;
+
+//         const nameLine =
+//             lines.find(l => /NAME/i.test(l)) ||
+//             lines.find(l =>
+//                 /^[A-Z\s]{5,}$/.test(l.trim()) &&
+//                 !l.includes("LICENCE") &&
+//                 !l.includes("GOVERNMENT")
+//             );
+
+//         return {
+//             documentType: "drivingLicense",
+//             name: nameLine ? nameLine.replace(/NAME[:\-]*/i, "").trim() : null,
+//             licenseNo,
+//             expiryDate: dates[1] || dates[0] || null
+//         };
+//     }
+
+//     if (type === "rc") {
+
+//         const vehicleRegex =
+//             /\b[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}\b/;
+
+//         const chassisRegex =
+//             /\b[A-HJ-NPR-Z0-9]{16,17}\b/;
+
+//         return {
+//             documentType: "vehicleRC",
+//             vehicleNo: text.match(vehicleRegex)?.[0] || null,
+//             chassisNo: text.match(chassisRegex)?.[0] || null,
+//             expiryDate: dates[0] || null
+//         };
+//     }
+
+//     if (type === "insurance") {
+
+//         const policyRegex =
+//             /\b[A-Z0-9]{6,20}\b/;
+
+//         return {
+//             documentType: "insurance",
+//             policyNo: text.match(policyRegex)?.[0] || null,
+//             expiryDate: dates[0] || null
+//         };
+//     }
+
+//     if (type === "fitness") {
+
+//         return {
+//             documentType: "fitness",
+//             expiryDate: dates[0] || null
+//         };
+//     }
+
+//     return {};
+// };
+
+
+export const extractFieldsFromLines = (lines, type) => {
+
+    if (type === "dl" || type === "license")
+        return parseDrivingLicense(lines);
+
+    if (type === "rc" || type === "vehicleRC" || type === "RC")
+        return parseRC(lines);
+
+    if (type === "insurance")
+        return parseInsurance(lines);
+
+    if (type === "fitness")
+        return parseFitness(lines);
+
+    return {};
+};
+export const uploadTempDocuments = asyncHandler(async (req, res) => {
+    const { sessionId, doNumber } = req.body;
+
+    let types = req.body.types;
+    if (typeof types === "string") {
+        types = JSON.parse(types);
     }
 
     const uploaded = [];
+    const ocrResults = {};
 
     for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
         const type = types[i];
 
-        if (!allowedDocTypes.includes(type)) {
-            throw new ApiError(400, `Invalid document type: ${type}`);
-        }
-
-        // Prevent duplicate in temp
-        const existing = await prisma.driver_Temp_Upload.findFirst({
-            where: {
-                Session_Id: sessionId,
-                Doc_Type: type,
-                Is_Selfie: false,
-            },
-        });
-
-        if (existing) {
-            throw new ApiError(409, `Document already uploaded: ${type}`);
-        }
-
-        // Upload to S3 (sequential as requested)
-        const url = await uploadToS3(file);
+        const url = await uploadToS3(file, doNumber, type);
 
         await prisma.driver_Temp_Upload.create({
             data: {
@@ -557,16 +587,52 @@ export const uploadTempDocuments = asyncHandler(async (req, res) => {
         });
 
         uploaded.push({ type, url });
+
+        // Only run Textract for image documents; skip PDFs and selfie.
+        // if (type !== "selfie" && file.mimetype.startsWith("image/")) {
+        //     const lines = await extractTextFromS3Url(url);
+        //     const fields = extractFieldsFromLines(lines, type);
+        //     ocrResults[type] = {
+        //         lines,
+        //         fields,
+        //     };
+        // }
+        // it extact for Images and PDF s well.
+        if (type !== "selfie") {
+            let lines = [];
+
+            if (file.mimetype.startsWith("image/")) {
+                lines = await extractTextFromS3Url(url);  // existing logic
+            }
+
+            if (file.mimetype === "application/pdf") {
+                lines = await extractTextFromPdf(url);
+            }
+
+            const fields = extractFieldsFromLines(lines, type);
+
+            ocrResults[type] = {
+                lines,
+                fields
+            };
+        }
     }
 
-    return res.json(new ApiResponse(200, { files: uploaded }, "Documents uploaded"));
+    return res.json(
+        new ApiResponse(
+            200,
+            { files: uploaded, ocr: ocrResults },
+            "Documents uploaded"
+        )
+    );
 });
+
 export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!req.file) {
         throw new ApiError(400, "No selfie uploaded");
     }
 
-    const { sessionId } = req.body;
+    const { sessionId, doNumber } = req.body;
 
     if (!sessionId) {
         throw new ApiError(400, "Session ID required");
@@ -583,8 +649,12 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
     }
 
+    // if (req.file.mimetype.startsWith("image/")) {
+    //     await ensureImageQuality(req.file.buffer);
+    // }
+
     // Upload selfie to S3 and store URL
-    const url = await uploadToS3(req.file);
+    const url = await uploadToS3(req.file, doNumber, "selfie");
 
     await prisma.driver_Temp_Upload.create({
         data: {
@@ -599,14 +669,23 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
 });
 
 export const finalizeCheckin = asyncHandler(async (req, res) => {
-    const { sessionId, doNo, vehicleNo, driverName, mobile, lrNumber } = req.body;
+    const {
+        sessionId,
+        doNo,
+        vehicleNo,
+        driverName,
+        mobile,
+        lrNumber,
+        documentDetails,
+    } = req.body;
+
     const payload = {
         sessionId,
         doNo,
         vehicleNo,
         driverName,
         mobile,
-        lrNumber
+        lrNumber,
     };
     //   console.log(payload);
 
@@ -699,13 +778,34 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     //     return checkin;
     // });
     const result = await prisma.$transaction(async (tx) => {
+        const licenceExpiry =
+            documentDetails?.dl?.expiryDate &&
+            parseDate(documentDetails.dl.expiryDate);
+        const insuranceExpiry =
+            documentDetails?.insurance?.expiryDate &&
+            parseDate(documentDetails.insurance.expiryDate);
+        const rcExpiry =
+            documentDetails?.rc?.expiryDate &&
+            parseDate(documentDetails.rc.expiryDate);
+        const fitnessExpiry =
+            documentDetails?.fitness?.expiryDate &&
+            parseDate(documentDetails.fitness.expiryDate);
+
         const checkin = await tx.driver_Checkin.create({
             data: {
                 Do_No: doNo,
                 Vehicle_No: vehicleNo,
                 Driver_Name: driverName,
                 Mobile: mobile,
-                Status: "CheckedIn",
+                Licence_Expiry_Date: licenceExpiry ?? undefined,
+                Insurance_Number:
+                    documentDetails?.insurance?.policyNo ?? undefined,
+                Insurance_Expiry_Date: insuranceExpiry ?? undefined,
+                Chassis_Number:
+                    documentDetails?.rc?.chassisNo ?? undefined,
+                Rc_Expiry_Date: rcExpiry ?? undefined,
+                Fitness_Expiry_Date: fitnessExpiry ?? undefined,
+                Status: "ReportIn",
                 Entry_Time: new Date(),
                 Zgp: insertResult.responseData?.Message || "N/A",
             },

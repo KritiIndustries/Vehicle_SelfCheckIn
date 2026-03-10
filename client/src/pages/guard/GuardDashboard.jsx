@@ -221,7 +221,7 @@ const mockVehicles = [
 
 import axios from "axios";
 import formatApiDate from "@/services/formatApiDate.service";
-import { toast } from "sonner";
+
 const API = import.meta.env.VITE_API_BASE_URL;;
 export default function GuardDashboard() {
     const [vehicles, setVehicles] = useState([]);
@@ -255,7 +255,7 @@ export default function GuardDashboard() {
     };
     const mapStatus = (status) => {
         if (status === "CheckedIn") return "waiting";
-        if (status === "Reportin") return "inside";
+        if (status === "ReportIn") return "inside";
         if (status === "Completed") return "completed";
         return "waiting";
     };
@@ -283,7 +283,7 @@ export default function GuardDashboard() {
             fetchVehicles();
             setSelectedVehicle(null);
         } catch (err) {
-            toast.error("Checkout failed");
+            alert("Checkout failed");
         }
     };
 

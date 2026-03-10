@@ -339,6 +339,7 @@ const SelfieVerification = () => {
     const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
     const sessionId = localStorage.getItem("driver_session");
+    let value = JSON.parse(sessionStorage.getItem("driverDetails"));
 
     /* ========================= */
     /* TIMER */
@@ -392,6 +393,7 @@ const SelfieVerification = () => {
 
             const formData = new FormData();
             formData.append("sessionId", sessionId);
+            formData.append("doNumber", value?.doNumber);
             formData.append("selfie", file);
 
             await axios.post(`${API}/api/driver/upload-selfie`, formData, {
@@ -420,17 +422,23 @@ const SelfieVerification = () => {
 
     const finalizeCheckin = async () => {
         try {
-            let value = JSON.parse(sessionStorage.getItem("driverDetails"));
+            const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
+            const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+
+            const vehicleNo =
+                ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+            const driverName =
+                ocrDetails?.dl?.name || "Driver";
+
             console.log("Finalize response received", sessionId, value);
             const response = await axios.post(`${API}/api/driver/finalize`, {
                 sessionId,
                 doNo: value?.doNumber || null,
-                //TODO: get real vehicle number and driver name from session or previous steps instead of hardcoding
-                vehicleNo: "MP09AB0909",
-                driverName: "Test Driver4",
+                vehicleNo,
+                driverName,
                 mobile: value?.mobile || null,
                 lrNumber: value?.lrNumber || null,
-
+                documentDetails: ocrDetails,
             });
             localStorage.removeItem("driver_session");
 

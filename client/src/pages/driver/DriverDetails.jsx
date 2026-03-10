@@ -125,9 +125,6 @@ const DriverDetails = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const doValue = searchParams.get("DO");
-
-
-
     const [doNumber, setDoNumber] = useState(doValue || 0);
     const [lrNumber, setLrNumber] = useState("");
     const [mobile, setMobile] = useState("");
@@ -182,7 +179,13 @@ const DriverDetails = () => {
             speak("कृपया डीलर से लिंक प्राप्त करें");
             return;
         }
-        navigate("/driver/documents");
+        navigate("/driver/documents", {
+            state: {
+                doNumber,
+                lrNumber,
+                mobile
+            }
+        });
     };
 
     const replayAudio = () => {

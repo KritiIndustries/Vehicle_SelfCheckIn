@@ -37,6 +37,7 @@ import DriverLogin from "./pages/driver/DriverLogin";
 import LocationCheck from "./pages/driver/LocationCheck";
 import DriverDetails from "./pages/driver/DriverDetails";
 import DocumentUpload from "./pages/driver/DocumentUpload";
+import DocumentReview from "./pages/driver/DocumentReview";
 import SelfieVerification from "./pages/driver/SelfieVerification";
 import CheckinSuccess from "./pages/driver/CheckinSuccess";
 
@@ -87,6 +88,14 @@ const App = () => (
               element={
                 <GeoGuard>
                   <DocumentUpload />
+                </GeoGuard>
+              }
+            />
+            <Route
+              path="/driver/doc-review"
+              element={
+                <GeoGuard>
+                  <DocumentReview />
                 </GeoGuard>
               }
             />

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -20,6 +20,7 @@ import usePageAudio from "@/hooks/usePageAudio";
 import OCRProcessor from "@/components/OCRProcessor";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { toast } from "sonner";
+import { fromTheme } from "tailwind-merge";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -41,7 +42,12 @@ const getSessionId = () => {
 
 const DocumentUpload = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const driverDetails = location.state;
 
+    if (!driverDetails) {
+        return <div className="mobile-container">No data found</div>;
+    }
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
     const pdfInputRef = useRef(null);
@@ -54,6 +60,7 @@ const DocumentUpload = () => {
     const [currentImage, setCurrentImage] = useState(null);
     const [extractedData, setExtractedData] = useState({});
     const [showConfirmation, setShowConfirmation] = useState(false);
+    const [loading , setloading] = useState(false);
 
     const sessionId = getSessionId();
     useEffect(() => {
@@ -89,129 +96,63 @@ const DocumentUpload = () => {
     /* ========================= */
     /* HANDLE FILE */
     /* ========================= */
+    const handleFileSelect = (file) => {
 
-    const handleFileSelect = async (file) => {
         if (!file || !currentDocKey) return;
+
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/jpg",
+            "application/pdf"
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+            toast.error("Only images or PDF allowed");
+            return;
+        }
 
         setShowPicker(null);
 
-        // For image files, show OCR processing
-        if (file.type.startsWith('image/')) {
-            const imageUrl = URL.createObjectURL(file);
-            setCurrentImage(imageUrl);
-            // setShowOCR(true);
+        const preview =
+            file.type.startsWith("image/")
+                ? URL.createObjectURL(file)
+                : null;
 
-            // Store file for later upload after OCR confirmation
-            setDocs((prev) => ({
-                ...prev,
-                [currentDocKey]: {
-                    preview: imageUrl,
-                    progress: 0,
-                    uploading: false,
-                    uploaded: false,
-                    file
-                },
-            }));
-        } else {
-            // For PDF files, upload directly without OCR
-            await uploadAllDocuments(currentDocKey, file);
-        }
+        setDocs(prev => ({
+            ...prev,
+            [currentDocKey]: {
+                preview,
+                progress: 0,
+                uploading: false,
+                uploaded: false,
+                file
+            }
+        }));
     };
-
-    // const uploadDocument = async (docKey, file) => {
-    //     setDocs((prev) => ({
-    //         ...prev,
-    //         [docKey]: {
-    //             preview: file.type === "application/pdf" ? null : URL.createObjectURL(file),
-    //             progress: 0,
-    //             uploading: true,
-    //             uploaded: false,
-    //             file
-    //         },
-    //     }));
-
-    //     const formData = new FormData();
-    //     formData.append("sessionId", sessionId);
-    //     formData.append("type", docKey);
-    //     formData.append("document", file);
-
-    //     try {
-    //         // await axios.post(`${API}/api/driver/upload-doc`, formData, {
-    //         //     onUploadProgress: (event) => {
-    //         //         const percent = Math.round(
-    //         //             (event.loaded * 100) / event.total
-    //         //         );
-
-    //         //         setDocs((prev) => ({
-    //         //             ...prev,
-    //         //             [docKey]: {
-    //         //                 ...prev[docKey],
-    //         //                 progress: percent,
-    //         //             },
-    //         //         }));
-    //         //     },
-    //         // });
-
-    //         await axios.post(`${API}/api/driver/upload-doc`, formData, {
-    //             onUploadProgress: (event) => {
-    //                 const percent = Math.round(
-    //                     (event.loaded * 100) / event.total
-    //                 );
-
-    //                 setDocs((prev) => ({
-    //                     ...prev,
-    //                     [docKey]: {
-    //                         ...prev[docKey],
-    //                         progress: percent,
-    //                     },
-    //                 }));
-    //             }
-    //         });
-    //         setDocs((prev) => ({
-    //             ...prev,
-    //             [docKey]: {
-    //                 ...prev[docKey],
-    //                 uploading: false,
-    //                 uploaded: true,
-    //                 progress: 100,
-    //             },
-    //         }));
-    //     } catch (error) {
-    //         alert(error.response?.data?.message || "Upload failed");
-
-    //         setDocs((prev) => ({
-    //             ...prev,
-    //             [docKey]: {
-    //                 ...prev[docKey],
-    //                 uploading: false,
-    //             },
-    //         }));
-    //     }
-    // };
-
-
     const uploadAllDocuments = async () => {
 
         const requiredDocs = ["dl", "rc", "insurance", "fitness"];
 
-        // check if all docs selected
         const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
 
-        if (missingDocs.length > 0) {
+        if (missingDocs.length) {
             toast.error("Please upload all required documents");
             return;
         }
 
         const formData = new FormData();
+
         formData.append("sessionId", sessionId);
+        formData.append("doNumber", driverDetails?.doNumber);
 
         const types = [];
 
         requiredDocs.forEach((key) => {
 
-            const doc = docs[key];
+            const file = docs[key].file;
 
-            formData.append("documents", doc.file);
+            formData.append("documents", file);
             types.push(key);
 
         });
@@ -221,26 +162,55 @@ const DocumentUpload = () => {
         try {
 
             const res = await axios.post(
-                `${API}/api/driver/upload-doc`,
+                `${API}/api/driver/upload-docs`,
                 formData,
                 {
                     headers: {
                         "Content-Type": "multipart/form-data"
+                    },
+                    onUploadProgress: (progressEvent) => {
+
+                        const percent = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        );
+
+                        setDocs(prev => {
+                            const updated = { ...prev };
+
+                            requiredDocs.forEach(k => {
+                                if (updated[k]) {
+                                    updated[k].progress = percent;
+                                    updated[k].uploading = percent < 100;
+                                    updated[k].uploaded = percent === 100;
+                                }
+                            });
+
+                            return updated;
+                        });
+
                     }
                 }
             );
 
-            console.log(res.data);
+            const ocr = res.data?.data?.ocr;
 
-            toast.success("All documents uploaded successfully");
+            if (ocr) {
+                sessionStorage.setItem("ocrData", JSON.stringify(ocr));
+            }
 
-            navigate("/driver/selfie");
+            toast.success("Documents uploaded successfully");
+
+            navigate("/driver/doc-review");
 
         } catch (error) {
 
             console.error(error);
 
-            toast.error(error.response?.data?.message || "Upload failed");
+            toast.error(
+                error.response?.data?.message || "Document upload failed"
+            );
+
+            speak(error.response?.data?.message || "Upload failed");
 
         }
 
@@ -257,7 +227,7 @@ const DocumentUpload = () => {
         // Now upload the file after OCR confirmation
         const docState = docs[currentDocKey];
         if (docState && docState.file) {
-            uploadDocument(currentDocKey, docState.file);
+            uploadAllDocuments(currentDocKey, docState.file);
         }
     };
 
