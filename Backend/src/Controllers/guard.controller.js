@@ -46,6 +46,41 @@ export const guardLogin = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, null, "OTP sent successfully"))
 
 });
+// export const getCheckedinDetails = asyncHandler(async (req, res) => {
+
+//     const details = await prisma.driver_Checkin.findMany({
+//         where: {
+//             Status: "ReportIn"
+//         },
+//         orderBy: {
+//             Entry_Time: "desc"
+//         },
+//         include: {
+//             Documents: {
+//                 orderBy: {
+//                     Created_At: "asc"
+//                 },
+//                 select: {
+//                     Id: true,
+//                     Doc_Type: true,
+//                     Verified: true,
+//                     Image_Path: true,
+//                     Verified_By: true,
+//                     Created_At: true
+//                 }
+//             }
+//         }
+//     });
+
+//     // return new ApiResponse(
+//     //     200,
+//     //     details,
+//     //     "Checked-in details retrieved successfully"
+//     // );
+//     return res.status(200).json(new ApiResponse(200, details, "Checked-in details retrieved successfully"));
+// });
+
+
 export const getCheckedinDetails = asyncHandler(async (req, res) => {
 
     const details = await prisma.driver_Checkin.findMany({
@@ -72,10 +107,18 @@ export const getCheckedinDetails = asyncHandler(async (req, res) => {
         }
     });
 
-    // return new ApiResponse(
-    //     200,
-    //     details,
-    //     "Checked-in details retrieved successfully"
-    // );
-    return res.status(200).json(new ApiResponse(200, details, "Checked-in details retrieved successfully"));
+    const formatted = details.map(item => ({
+        ...item,
+        Documents: item.Documents.map(doc => ({
+            ...doc,
+            Image_Path: doc.Image_Path.replace(
+                "https://ocr-kriti.s3.ap-south-1.amazonaws.com/",
+                ""
+            )
+        }))
+    }));
+
+    return res.status(200).json(
+        new ApiResponse(200, formatted, "Checked-in details retrieved successfully")
+    );
 });

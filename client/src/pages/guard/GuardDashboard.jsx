@@ -198,7 +198,6 @@
 
 // export default GuardDashboard;
 
-
 import { useEffect, useState } from "react";
 import {
     Truck,
@@ -207,22 +206,56 @@ import {
     XCircle,
     LogOut,
     ChevronRight,
+    Eye,
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
 
 const mockVehicles = [
-    { id: "1", token: 24, vehicleNo: "MH 04 AB 1234", driverName: "Rajesh Kumar", doNumber: "DO-784512", rfid: "RF-9988", status: "waiting" },
-    { id: "2", token: 25, vehicleNo: "MP 09 CD 5678", driverName: "Suresh Yadav", doNumber: "DO-784513", rfid: "RF-9989", status: "waiting" },
-    { id: "3", token: 23, vehicleNo: "RJ 14 EF 9012", driverName: "Anil Sharma", doNumber: "DO-784510", rfid: "RF-9987", status: "inside", entryTime: "10:30 AM" },
-    { id: "4", token: 22, vehicleNo: "GJ 05 GH 3456", driverName: "Vikram Singh", doNumber: "DO-784509", rfid: "RF-9986", status: "loading", entryTime: "09:45 AM" },
+    {
+        id: "1",
+        token: 24,
+        vehicleNo: "MH 04 AB 1234",
+        driverName: "Rajesh Kumar",
+        doNumber: "DO-784512",
+        rfid: "RF-9988",
+        status: "waiting",
+    },
+    {
+        id: "2",
+        token: 25,
+        vehicleNo: "MP 09 CD 5678",
+        driverName: "Suresh Yadav",
+        doNumber: "DO-784513",
+        rfid: "RF-9989",
+        status: "waiting",
+    },
+    {
+        id: "3",
+        token: 23,
+        vehicleNo: "RJ 14 EF 9012",
+        driverName: "Anil Sharma",
+        doNumber: "DO-784510",
+        rfid: "RF-9987",
+        status: "inside",
+        entryTime: "10:30 AM",
+    },
+    {
+        id: "4",
+        token: 22,
+        vehicleNo: "GJ 05 GH 3456",
+        driverName: "Vikram Singh",
+        doNumber: "DO-784509",
+        rfid: "RF-9986",
+        status: "loading",
+        entryTime: "09:45 AM",
+    },
 ];
-
 
 import axios from "axios";
 import formatApiDate from "@/services/formatApiDate.service";
 
-const API = import.meta.env.VITE_API_BASE_URL;;
+const API = import.meta.env.VITE_API_BASE_URL;
 export default function GuardDashboard() {
     const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -230,6 +263,7 @@ export default function GuardDashboard() {
     const [rejectRemark, setRejectRemark] = useState("");
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [showImageModal, setShowImageModal] = useState(false);
 
     const fetchVehicles = async () => {
         try {
@@ -242,11 +276,10 @@ export default function GuardDashboard() {
                 doNumber: item.Do_No,
                 status: mapStatus(item.Status),
                 entryTime: item.Entry_Time,
-                documents: item.Documents
+                documents: item.Documents,
             }));
 
             setVehicles(formatted);
-
         } catch (err) {
             console.error("Fetch error:", err);
         } finally {
@@ -254,17 +287,15 @@ export default function GuardDashboard() {
         }
     };
     const mapStatus = (status) => {
-        if (status === "CheckedIn") return "waiting";
+        if (status === "ReportIn") return "waiting";
         if (status === "ReportIn") return "inside";
         if (status === "Completed") return "completed";
         return "waiting";
     };
 
-    const queueVehicles = vehicles.filter(
-        (v) => v.status === "waiting"
-    );
+    const queueVehicles = vehicles.filter((v) => v.status === "waiting");
     const insideVehicles = vehicles.filter(
-        (v) => v.status === "inside" || v.status === "loading"
+        (v) => v.status === "inside" || v.status === "loading",
     );
 
     const handleCheckIn = async (id) => {
@@ -291,7 +322,7 @@ export default function GuardDashboard() {
 
     useEffect(() => {
         fetchVehicles();
-    }, [])
+    }, []);
     return (
         <div className="mobile-container">
             <AppHeader showAudio={false} />
@@ -311,9 +342,6 @@ export default function GuardDashboard() {
                     गार्ड डैशबोर्ड
                 </p>
             </div>
-
-
-
 
             {/* STATS */}
             <div className="grid grid-cols-3 gap-3 px-5 mb-4">
@@ -412,7 +440,6 @@ export default function GuardDashboard() {
             {/* ===================== */}
             {selectedVehicle && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center">
-
                     {/* BACKDROP */}
                     <div
                         className="absolute inset-0"
@@ -459,7 +486,12 @@ export default function GuardDashboard() {
                                 { label: "RFID", value: selectedVehicle.rfid },
                                 { label: "Status", value: selectedVehicle.status },
                                 ...(selectedVehicle.entryTime
-                                    ? [{ label: "Entry Time", value: formatApiDate(selectedVehicle.entryTime) }]
+                                    ? [
+                                        {
+                                            label: "Entry Time",
+                                            value: formatApiDate(selectedVehicle.entryTime),
+                                        },
+                                    ]
                                     : []),
                             ].map((item) => (
                                 <div key={item.label} className="flex justify-between">
@@ -472,6 +504,22 @@ export default function GuardDashboard() {
                                 </div>
                             ))}
                         </div>
+
+                        {/* VIEW DOCUMENT IMAGES */}
+                        {selectedVehicle.documents &&
+                            selectedVehicle.documents.length > 0 && (
+                                <button
+                                    onClick={() => setShowImageModal(true)}
+                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3"
+                                    style={{
+                                        border: "1px solid hsl(var(--primary))",
+                                        color: "hsl(var(--primary))",
+                                    }}
+                                >
+                                    <Eye className="w-4 h-4" />
+                                    View Uploaded Images
+                                </button>
+                            )}
 
                         {selectedVehicle.status === "waiting" && (
                             <>
@@ -521,7 +569,6 @@ export default function GuardDashboard() {
             {/* ===================== */}
             {showRejectModal && selectedVehicle && (
                 <div className="fixed inset-0 z-60 flex items-center justify-center p-5">
-
                     {/* BACKDROP */}
                     <div
                         className="absolute inset-0"
@@ -578,6 +625,80 @@ export default function GuardDashboard() {
                             >
                                 Confirm
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ===================== */}
+            {/* IMAGE VIEWER MODAL */}
+            {/* ===================== */}
+            {showImageModal && selectedVehicle && selectedVehicle.documents && (
+                <div className="fixed inset-0 z-70 flex items-center justify-center p-4">
+                    {/* BACKDROP */}
+                    <div
+                        className="absolute inset-0"
+                        style={{ background: "hsl(var(--foreground) / 0.7)" }}
+                        onClick={() => setShowImageModal(false)}
+                    />
+
+                    {/* MODAL */}
+                    <div
+                        className="relative w-full max-w-md rounded-2xl p-4 max-h-[80vh] overflow-auto shadow-2xl"
+                        style={{ background: "hsl(var(--card))" }}
+                    >
+                        <div className="flex justify-between items-center mb-3">
+                            <h3
+                                className="text-lg font-bold"
+                                style={{ color: "hsl(var(--foreground))" }}
+                            >
+                                Uploaded Images
+                            </h3>
+                            <button
+                                onClick={() => setShowImageModal(false)}
+                                className="text-xl"
+                                style={{ color: "hsl(var(--muted-foreground))" }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            {selectedVehicle.documents.map((doc) => (
+                                <div key={doc.Id} className="space-y-1">
+                                    <div
+                                        className="w-full overflow-hidden rounded-xl border"
+                                        style={{ borderColor: "hsl(var(--border))" }}
+                                    >
+                                        <p
+                                            className="text-xs font-medium text-center uppercase"
+                                            style={{ color: "hsl(var(--muted-foreground))" }}
+                                        >
+                                            {doc.Doc_Type}
+                                        </p>
+                                        <div className="p-2 text-center">
+                                            <div>
+                                                <img
+                                                    src={`${API}/api/guard/image/${doc.Image_Path}`}
+                                                    alt={doc.Doc_Type}
+                                                    className="w-full h-32 object-cover"
+                                                />
+                                            </div>
+
+                                            <div className="w-full bg-blue-600 text-shadow rounded mt-1 text-white">
+                                                <a
+                                                    className=""
+                                                    href={`${API}/api/guard/image/${doc.Image_Path}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    View
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>

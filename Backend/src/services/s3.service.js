@@ -1,5 +1,6 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuid } from "uuid";
+import asyncHandler from "../utils/asyncHandler.js";
 
 const s3 = new S3Client({
     region: process.env.S3_REGION,
@@ -50,3 +51,23 @@ export const uploadToS3 = async (file, doNumber, type) => {
 
     return `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.S3_REGION}.amazonaws.com/${fileKey}`;
 };
+
+export const getS3Image = asyncHandler(async (req, res) => {
+
+    const { folder, subfolder, filename } = req.params;
+
+    const key = `${folder}/${subfolder}/${filename}`;
+
+    const command = new GetObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: key
+    });
+
+    const response = await s3.send(command);
+
+    res.setHeader("Content-Type", response.ContentType);
+    res.setHeader("Cache-Control", "public, max-age=86400");
+
+    response.Body.pipe(res);
+
+});

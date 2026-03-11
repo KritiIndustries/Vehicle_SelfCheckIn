@@ -11,8 +11,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1004.0",
+    "@aws-sdk/client-s3": "^3.1005.0",
     "@aws-sdk/client-textract": "^3.1004.0",
+    "@aws-sdk/s3-request-presigner": "^3.1005.0",
     "@prisma/adapter-mssql": "^7.4.1",
     "@prisma/client": "^6.19.2",
     "@types/mssql": "^9.1.9",
