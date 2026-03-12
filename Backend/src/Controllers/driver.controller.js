@@ -634,8 +634,8 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
 
     const { sessionId, doNumber } = req.body;
 
-    if (!sessionId) {
-        throw new ApiError(400, "Session ID required");
+    if (!sessionId || typeof sessionId !== "string") {
+        throw new ApiError(400, "Invalid sessionId");
     }
 
     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
@@ -655,6 +655,9 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
 
     // Upload selfie to S3 and store URL
     const url = await uploadToS3(req.file, doNumber, "selfie");
+    if (!url) {
+        throw new ApiError(500, "S3 upload failed");
+    }
 
     await prisma.driver_Temp_Upload.create({
         data: {
@@ -662,6 +665,7 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
             Doc_Type: "selfie",
             Image_Path: url,
             Is_Selfie: true,
+            Created_At: new Date()
         },
     });
 
@@ -698,7 +702,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     });
 
     if (tempUploads.length < 5) {
-        throw new ApiError(400, "All documents and selfie required");
+        throw new ApiError(400, "सभी दस्तावेज़ और सेल्फी आवश्यक हैं");
     }
 
     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
@@ -739,94 +743,72 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     const tokenAndcookie = await fetchCsrfToken(secondaryURL);
 
     const insertResult = await insertZGP(payload, tokenAndcookie);
+    console.log("insertResult", insertResult);
+
     if (!insertResult || !insertResult.success) {
         throw new ApiError(
             500,
             insertResult?.message || "ZGP API failed or returned empty response"
         );
     }
+    const data = {
+        Do_No: doNo,
+        Vehicle_No: vehicleNo,
+        Driver_Name: driverName,
+        Mobile: mobile,
+
+        Licence_Expiry_Date: documentDetails?.dl?.expiryDate,
+        Insurance_Number: documentDetails?.insurance?.policyNo || null,
+        Insurance_Expiry_Date: documentDetails?.insurance?.expiryDate,
+        Chassis_Number: documentDetails?.rc?.chassisNo || null,
+        Rc_Expiry_Date: documentDetails?.rc?.expiryDate,
+        Fitness_Expiry_Date: documentDetails?.fitness?.expiryDate,
+        Status: "ReportIn",
+        Entry_Time: new Date(),
+        Zgp: "123456789" // insertResult.responseData?.Message || "N/A"
+
+    }
+    console.log("data ", data);
+
 
     // 🔥 TRANSACTION (Very Important)
-    // const result = await prisma.$transaction(async (tx) => {
-    //     const checkin = await tx.driver_Checkin.create({
-    //         data: {
-    //             Do_No: doNo,
-    //             Vehicle_No: vehicleNo,
-    //             Driver_Name: driverName,
-    //             Mobile: mobile,
-    //             Status: "CheckedIn",
-    //             Entry_Time: new Date(),
-    //             Zgp: insertResult.responseData.Message || "N/A"
-    //         }
-    //     });
-
-    //     for (const upload of tempUploads) {
-    //         await tx.driver_Documents.create({
-    //             data: {
-    //                 Driver_Checkin_Id: checkin.Id,
-    //                 Doc_Type: upload.Doc_Type,
-    //                 Image_Path: upload.Image_Path,
-    //                 Verified: false
-    //             }
-    //         });
-    //     }
-
-    //     await tx.driver_Temp_Upload.deleteMany({
-    //         where: { Session_Id: sessionId }
-    //     });
-
-    //     return checkin;
-    // });
     const result = await prisma.$transaction(async (tx) => {
-        const licenceExpiry =
-            documentDetails?.dl?.expiryDate &&
-            parseDate(documentDetails.dl.expiryDate);
-        const insuranceExpiry =
-            documentDetails?.insurance?.expiryDate &&
-            parseDate(documentDetails.insurance.expiryDate);
-        const rcExpiry =
-            documentDetails?.rc?.expiryDate &&
-            parseDate(documentDetails.rc.expiryDate);
-        const fitnessExpiry =
-            documentDetails?.fitness?.expiryDate &&
-            parseDate(documentDetails.fitness.expiryDate);
-
+      
         const checkin = await tx.driver_Checkin.create({
             data: {
                 Do_No: doNo,
                 Vehicle_No: vehicleNo,
                 Driver_Name: driverName,
                 Mobile: mobile,
-                Licence_Expiry_Date: licenceExpiry ?? undefined,
-                Insurance_Number:
-                    documentDetails?.insurance?.policyNo ?? undefined,
-                Insurance_Expiry_Date: insuranceExpiry ?? undefined,
-                Chassis_Number:
-                    documentDetails?.rc?.chassisNo ?? undefined,
-                Rc_Expiry_Date: rcExpiry ?? undefined,
-                Fitness_Expiry_Date: fitnessExpiry ?? undefined,
+                Licence_Expiry_Date: documentDetails?.dl?.expiryDate,
+                Insurance_Number:documentDetails?.insurance?.policyNo ?? undefined,
+                Insurance_Expiry_Date: documentDetails?.insurance?.expiryDate,
+                Chassis_Number:documentDetails?.rc?.chassisNo ?? undefined,
+                Rc_Expiry_Date: documentDetails?.rc?.expiryDate,
+                Fitness_Expiry_Date: documentDetails?.fitness?.expiryDate,
                 Status: "ReportIn",
                 Entry_Time: new Date(),
                 Zgp: insertResult.responseData?.Message || "N/A",
             },
         });
 
-        await tx.driver_Documents.createMany({
-            data: tempUploads.map((upload) => ({
-                Driver_Checkin_Id: checkin.Id,
-                Doc_Type: upload.Doc_Type,
-                Image_Path: upload.Image_Path,
-                Verified: false,
-            })),
-        });
+        for (const upload of tempUploads) {
+            await tx.driver_Documents.create({
+                data: {
+                    Driver_Checkin_Id: checkin.Id,
+                    Doc_Type: upload.Doc_Type,
+                    Image_Path: upload.Image_Path,
+                    Verified: false
+                }
+            });
+        }
 
         await tx.driver_Temp_Upload.deleteMany({
-            where: { Session_Id: sessionId },
+            where: { Session_Id: sessionId }
         });
 
         return checkin;
     });
-
     return res
         .status(201)
         .json(new ApiResponse(201, result, "Check-in successful"));

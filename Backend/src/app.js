@@ -3,6 +3,7 @@ import guardRoutes from "./Routes/guard.routes.js";
 import adminRoutes from "./Routes/admin.routes.js";
 import driverRoutes from "./Routes/driver.routes.js";
 import authRoutes from "./Routes/auth.routes.js";
+import { weighbridgeUpdate } from "./Controllers/weighbridge.controller.js";
 import cors from "cors";
 
 const app = express();
@@ -21,6 +22,7 @@ app.use("/api/guard", guardRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/driver", driverRoutes);
 app.use("/api/auth", authRoutes);
+app.use('/api/weighbridge', weighbridgeUpdate);
 
 // Importing Routes
 

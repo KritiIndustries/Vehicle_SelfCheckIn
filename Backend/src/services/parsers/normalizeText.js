@@ -5,7 +5,7 @@ const normalizeText = (lines = []) => {
                 .toUpperCase()
                 .replace(/[|]/g, "I")
                 .replace(/O/g, "0")
-                .replace(/[^A-Z0-9\/\-:\s]/g, "")
+                // .replace(/[^A-Z0-9\/\-:\s]/g, "")
                 .trim()
         )
         .filter(Boolean);

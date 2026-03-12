@@ -103,6 +103,8 @@ export const getCheckedinDetails = asyncHandler(async (req, res) => {
                     Verified_By: true,
                     Created_At: true
                 }
+            }, include: {
+                weighbridge: true
             }
         }
     });

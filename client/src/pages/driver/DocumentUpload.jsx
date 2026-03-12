@@ -20,7 +20,9 @@ import usePageAudio from "@/hooks/usePageAudio";
 import OCRProcessor from "@/components/OCRProcessor";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 import { fromTheme } from "tailwind-merge";
+import { Button } from "@/components/ui/button";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -60,7 +62,7 @@ const DocumentUpload = () => {
     const [currentImage, setCurrentImage] = useState(null);
     const [extractedData, setExtractedData] = useState({});
     const [showConfirmation, setShowConfirmation] = useState(false);
-    const [loading , setloading] = useState(false);
+    const [loading, setloading] = useState(false);
 
     const sessionId = getSessionId();
     useEffect(() => {
@@ -137,7 +139,8 @@ const DocumentUpload = () => {
         const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
 
         if (missingDocs.length) {
-            toast.error("Please upload all required documents");
+            toast.error("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
+            speak("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
             return;
         }
 
@@ -160,6 +163,7 @@ const DocumentUpload = () => {
         formData.append("types", JSON.stringify(types));
 
         try {
+            setloading(true);
 
             const res = await axios.post(
                 `${API}/api/driver/upload-docs`,
@@ -198,7 +202,8 @@ const DocumentUpload = () => {
                 sessionStorage.setItem("ocrData", JSON.stringify(ocr));
             }
 
-            toast.success("Documents uploaded successfully");
+            toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+            speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
 
             navigate("/driver/doc-review");
 
@@ -212,6 +217,9 @@ const DocumentUpload = () => {
 
             speak(error.response?.data?.message || "Upload failed");
 
+        }
+        finally {
+            setloading(false);
         }
 
     };
@@ -340,13 +348,25 @@ const DocumentUpload = () => {
             </div>
 
             <div className="page-bottom">
-                <button
-                    onClick={uploadAllDocuments}
-                    disabled={!allSelected}
-                    className="btn-primary-full disabled:opacity-50"
-                >
-                    Next / आगे बढ़ें →
-                </button>
+                {
+                    !loading ? (<button
+                        onClick={uploadAllDocuments}
+                        disabled={!allSelected}
+                        className="btn-primary-full disabled:opacity-50"
+                    >
+                        Next / आगे बढ़ें →
+                    </button>) : (
+                        <Button
+                            variant="primary"
+                            disabled
+                            className="btn-primary-full "
+                        >Uploading...
+
+                            <Spinner className="mr-2" data-icon="inline-start" />
+                        </Button>
+                    )
+                }
+
             </div>
 
             {/* SELECT OPTION SHEET */}
