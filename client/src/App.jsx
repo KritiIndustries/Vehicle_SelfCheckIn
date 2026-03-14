@@ -1,31 +1,4 @@
 
-
-// const queryClient = new QueryClient();
-
-// const App = () => (
-//   <QueryClientProvider client={queryClient}>
-//     <TooltipProvider>
-//       <Toaster position="top-center" richColors closeButton />
-//       <BrowserRouter>
-//         <Routes>
-//           <Route path="/" element={<Index />} />
-//           <Route path="/driver/login" element={<DriverLogin />} />
-//           <Route path="/driver/location" element={<LocationCheck />} />
-//           <Route path="/driver/d" element={<DriverDetails />} />
-//           <Route path="/driver/documents" element={<DocumentUpload />} />
-//           <Route path="/driver/selfie" element={<SelfieVerification />} />
-//           <Route path="/driver/success" element={<CheckinSuccess />} />
-//           <Route path="/guard/login" element={<GuardLogin />} />
-//           <Route path="/guard/dashboard" element={<GuardDashboard />} />
-//           <Route path="*" element={<NotFound />} />
-//         </Routes>
-//       </BrowserRouter>
-//     </TooltipProvider>
-//   </QueryClientProvider>
-// );
-
-// export default App;
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -43,7 +16,7 @@ import CheckinSuccess from "./pages/driver/CheckinSuccess";
 
 import GuardLogin from "./pages/guard/GuardLogin";
 import GuardDashboard from "./pages/guard/GuardDashboard";
-import GeoGuard from "./pages/guard/GeoGuard";
+
 
 const queryClient = new QueryClient();
 
@@ -51,95 +24,95 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster position="top-center" richColors closeButton />
-      <GeoGuard>
-        <BrowserRouter>
-          <Routes>
 
-            {/* PUBLIC ROUTE */}
-            <Route path="/" element={<Index />} />
+      <BrowserRouter>
+        <Routes>
 
-            {/* ================= DRIVER ROUTES (GEOFENCED) ================= */}
-            <Route
-              path="/driver/login"
-              element={
-                <GeoGuard>
-                  <DriverLogin />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/driver/location"
-              element={
-                <GeoGuard>
-                  <LocationCheck />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/driver/d"
-              element={
-                <GeoGuard>
-                  <DriverDetails />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/driver/documents"
-              element={
-                <GeoGuard>
-                  <DocumentUpload />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/driver/doc-review"
-              element={
-                <GeoGuard>
-                  <DocumentReview />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/driver/selfie"
-              element={
-                <GeoGuard>
-                  <SelfieVerification />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/driver/success"
-              element={
-                <GeoGuard>
-                  <CheckinSuccess />
-                </GeoGuard>
-              }
-            />
+          {/* PUBLIC ROUTE */}
+          <Route path="/" element={<Index />} />
 
-            {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
-            <Route
-              path="/guard/login"
-              element={
-                <GeoGuard>
-                  <GuardLogin />
-                </GeoGuard>
-              }
-            />
-            <Route
-              path="/guard/dashboard"
-              element={
-                <GeoGuard>
-                  <GuardDashboard />
-                </GeoGuard>
-              }
-            />
+          {/* ================= DRIVER ROUTES (GEOFENCED) ================= */}
+          <Route
+            path="/driver/login"
+            element={
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
+              <DriverLogin />
 
-          </Routes>
-        </BrowserRouter>
-      </GeoGuard>
+            }
+          />
+          <Route
+            path="/driver/location"
+            element={
+
+              <LocationCheck />
+
+            }
+          />
+          <Route
+            path="/driver/d"
+            element={
+
+              <DriverDetails />
+
+            }
+          />
+          <Route
+            path="/driver/documents"
+            element={
+
+              <DocumentUpload />
+
+            }
+          />
+          <Route
+            path="/driver/doc-review"
+            element={
+
+              <DocumentReview />
+
+            }
+          />
+          <Route
+            path="/driver/selfie"
+            element={
+
+              <SelfieVerification />
+
+            }
+          />
+          <Route
+            path="/driver/success"
+            element={
+
+              <CheckinSuccess />
+
+            }
+          />
+
+          {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
+          <Route
+            path="/guard/login"
+            element={
+
+              <GuardLogin />
+
+            }
+          />
+          <Route
+            path="/guard/dashboard"
+            element={
+
+              <GuardDashboard />
+
+            }
+          />
+
+          {/* 404 */}
+          <Route path="*" element={<NotFound />} />
+
+        </Routes>
+      </BrowserRouter>
+
     </TooltipProvider>
   </QueryClientProvider>
 );
