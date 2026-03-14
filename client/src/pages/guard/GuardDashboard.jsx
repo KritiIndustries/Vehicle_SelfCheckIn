@@ -275,7 +275,7 @@ export default function GuardDashboard() {
                 driverName: item.Driver_Name,
                 doNumber: item.Do_No,
                 status: mapStatus(item.Status),
-                entryTime: item.Entry_Time,
+                entryTime: item.ReportIn_Time ?? item.Entry_Time,
                 documents: item.Documents,
             }));
 
@@ -288,14 +288,14 @@ export default function GuardDashboard() {
     };
     const mapStatus = (status) => {
         if (status === "ReportIn") return "waiting";
-        if (status === "ReportIn") return "inside";
-        if (status === "Completed") return "completed";
+        if (status === "CheckedIn") return "CheckedIn";
+        if (status === "CheckedOut") return "CheckedOut";
         return "waiting";
     };
 
     const queueVehicles = vehicles.filter((v) => v.status === "waiting");
     const insideVehicles = vehicles.filter(
-        (v) => v.status === "inside" || v.status === "loading",
+        (v) => v.status === "CheckedIn" || v.status === "loading",
     );
 
     const handleCheckIn = async (id) => {
@@ -351,13 +351,13 @@ export default function GuardDashboard() {
                     color="--warning"
                 />
                 <StatCard
-                    label="Inside"
+                    label="CheckedIn"
                     value={insideVehicles.length}
                     color="--success"
                 />
                 <StatCard
                     label="Done"
-                    value={vehicles.filter((v) => v.status === "completed").length}
+                    value={vehicles.filter((v) => v.status === "CheckedOut").length}
                     color="--accent"
                 />
             </div>
@@ -372,8 +372,8 @@ export default function GuardDashboard() {
                 </TabButton>
 
                 <TabButton
-                    active={activeTab === "inside"}
-                    onClick={() => setActiveTab("inside")}
+                    active={activeTab === "CheckedIn"}
+                    onClick={() => setActiveTab("CheckedIn")}
                 >
                     Inside ({insideVehicles.length})
                 </TabButton>
@@ -547,7 +547,7 @@ export default function GuardDashboard() {
                             </>
                         )}
 
-                        {(selectedVehicle.status === "inside" ||
+                        {(selectedVehicle.status === "CheckedIn" ||
                             selectedVehicle.status === "loading") && (
                                 <button
                                     onClick={() => handleCheckOut(selectedVehicle.id)}

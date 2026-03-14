@@ -144,7 +144,7 @@ const SelfieVerification = () => {
             speak(error.response?.data?.message || "Finalize failed");
         }
         finally {
-            setUploading(true);
+            setUploading(false);
         }
     };
 

@@ -52,7 +52,7 @@ model Driver_Checkin {
   Status                 String   @default("Pending") @db.VarChar(20)
 
   Zgp                    String?  @unique @db.VarChar(50)
-
+  ReportIn_Time          DateTime? @db.DateTime2
   Entry_Time             DateTime? @db.DateTime2
   Exit_Time              DateTime? @db.DateTime2
 

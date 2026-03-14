@@ -56,7 +56,6 @@ const insertZGP = async (data, token) => {
             TrailerRegNumb: data.lrNumber,
             DriverName: data.driverName,
             TransporterCode: "92000001",
-            Note: "API Test",
             DoNumber: data.doNo,
         };
 
