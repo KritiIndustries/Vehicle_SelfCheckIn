@@ -1,0 +1,37 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            cd ~/Vehicle_SelfCheckIn
+
+            # Pull latest code
+            git pull origin main
+
+            # Backend - install dependencies & restart
+            cd ~/Vehicle_SelfCheckIn/Backend
+            npm install
+            pm2 restart vehicle-backend
+
+            # Frontend - install, build & restart nginx
+            cd ~/Vehicle_SelfCheckIn/client
+            npm install
+            npm run build
+            sudo systemctl restart nginx
