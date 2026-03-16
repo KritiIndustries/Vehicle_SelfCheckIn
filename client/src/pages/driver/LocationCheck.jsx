@@ -36,7 +36,7 @@ const LocationCheck = () => {
             "आप अभी कास्ता प्लांट से 500 मीटर से अधिक दूरी पर हैं");
 
         return () => speechSynthesis.cancel();
-    }, [audioEnabled,speak]);
+    }, [audioEnabled, speak]);
 
     const checkLocation = () => {
         setChecking(true);
@@ -106,7 +106,7 @@ const LocationCheck = () => {
                             <p className="text-sm text-muted-foreground mt-1">कास्ता प्लांट में आपका स्वागत है</p>
                             <p className="text-xs text-muted-foreground mt-2">~{distance}m from plant</p>
                         </div>
-                        <button onClick={() => navigate("/driver/d")} className="btn-primary-full">
+                        <button onClick={() => navigate("/d")} className="btn-primary-full">
                             Continue / आगे बढ़ें →
                         </button>
                     </div>
@@ -119,7 +119,7 @@ const LocationCheck = () => {
                             <p className="text-sm text-muted-foreground mt-2">
                                 आप वर्तमान में कास्ता प्लांट से 500 मीटर से अधिक दूरी पर हैं
                             </p>
-                        </div>  
+                        </div>
                         <button onClick={checkLocation} className="btn-outline-primary mb-3">
                             <RefreshCw className="w-4 h-4" />
                             Refresh Location / स्थान रीफ्रेश करें

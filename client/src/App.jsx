@@ -47,7 +47,7 @@ const App = () => (
               <LocationCheck />
             </GeoGuard>
           } />
-          <Route path="/driver/d" element={
+          <Route path="/d" element={
             <GeoGuard>
               <DriverDetails />
             </GeoGuard>
