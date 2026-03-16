@@ -16,6 +16,7 @@ import CheckinSuccess from "./pages/driver/CheckinSuccess";
 
 import GuardLogin from "./pages/guard/GuardLogin";
 import GuardDashboard from "./pages/guard/GuardDashboard";
+import GeoGuard from "./pages/guard/GeoGuard";
 
 
 const queryClient = new QueryClient();
@@ -29,86 +30,67 @@ const App = () => (
         <Routes>
 
           {/* PUBLIC ROUTE */}
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={
+            <GeoGuard>
+              <Index />
+            </GeoGuard>
+          } />
 
           {/* ================= DRIVER ROUTES (GEOFENCED) ================= */}
-          <Route
-            path="/driver/login"
-            element={
-
+          <Route path="/driver/login" element={
+            <GeoGuard>
               <DriverLogin />
-
-            }
-          />
-          <Route
-            path="/driver/location"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/driver/location" element={
+            <GeoGuard>
               <LocationCheck />
-
-            }
-          />
-          <Route
-            path="/driver/d"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/driver/d" element={
+            <GeoGuard>
               <DriverDetails />
-
-            }
-          />
-          <Route
-            path="/driver/documents"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/driver/documents" element={
+            <GeoGuard>
               <DocumentUpload />
-
-            }
-          />
-          <Route
-            path="/driver/doc-review"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/driver/doc-review" element={
+            <GeoGuard>
               <DocumentReview />
-
-            }
-          />
-          <Route
-            path="/driver/selfie"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/driver/selfie" element={
+            <GeoGuard>
               <SelfieVerification />
-
-            }
-          />
-          <Route
-            path="/driver/success"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/driver/success" element={
+            <GeoGuard>
               <CheckinSuccess />
-
-            }
-          />
+            </GeoGuard>
+          } />
 
           {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
-          <Route
-            path="/guard/login"
-            element={
-
+          <Route path="/guard/login" element={
+            <GeoGuard>
               <GuardLogin />
-
-            }
-          />
-          <Route
-            path="/guard/dashboard"
-            element={
-
+            </GeoGuard>
+          } />
+          <Route path="/guard/dashboard" element={
+            <GeoGuard>
               <GuardDashboard />
-
-            }
-          />
+            </GeoGuard>
+          } />
 
           {/* 404 */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={
+            <GeoGuard>
+              <NotFound />
+            </GeoGuard>
+          } />
 
         </Routes>
       </BrowserRouter>

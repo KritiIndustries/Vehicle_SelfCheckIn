@@ -137,7 +137,7 @@ const DriverDetails = () => {
     /* ========================= */
 
     useEffect(() => {
-        const welcomeText = "Kaasta Plant में आपका स्वागत है";
+        const welcomeText = "Kaasta Plant में आपका स्वागत है कृपया अपना विवरण दर्ज करें";
         speak(welcomeText);
     }, [speak]);
 
