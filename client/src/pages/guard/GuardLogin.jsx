@@ -107,13 +107,17 @@ const GuardLogin = () => {
                 phone: mobile
             });
 
-            if (response.data.success) {
-                setOtpSent(true);
-                toast.success("OTP sent successfully");
+            if (!response.data.success) {
+                toast.error(response.data.message);   // ✅ Guard not found!!
+                return;
             }
+
+            setOtpSent(true);
+            toast.success(response.data.message);
+
         } catch (err) {
-            // setError(err.response?.data?.message || "Failed to send OTP");
-            toast.error(error.response?.data?.message || "Failed to send OTP....");
+            console.log("Error", err);
+            toast.error(err.response?.data?.message || "Failed to send OTP");
         } finally {
             setLoading(false);
         }
