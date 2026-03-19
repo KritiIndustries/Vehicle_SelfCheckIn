@@ -123,7 +123,7 @@ export const getCheckedinDetails = asyncHandler(async (req, res) => {
             }
         }
     });
-
+//TODO:Check wiehtbrage table , if there is same pass number then allow gaurd to checkin
     const formatted = details.map(item => ({
         ...item,
         Documents: item.Documents.map(doc => ({

@@ -119,17 +119,21 @@ model Weighbridge {
 
   driverCheckin Driver_Checkin @relation(fields: [GatePassNo], references: [Zgp])
 
-  Tolerances    Decimal?
+  Tolerances    Decimal?@db.Decimal(10,2)
 
-  GrossWeight   Decimal?
+
+  GrossWeight   Decimal?@db.Decimal(10,2)
+
   GrossDate     DateTime?
   GrossTime     String?
 
-  TareWeight    Decimal?
+  TareWeight    Decimal?@db.Decimal(10,2)
+
   TareDate      DateTime?
   TareTime      String?
 
-  NetWeight     Decimal?
+  NetWeight     Decimal?@db.Decimal(10,2)
+
 
   Duration      Int?
   Shift         String?
