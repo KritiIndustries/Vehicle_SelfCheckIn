@@ -490,22 +490,32 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
                 Vehicle_No: vehicleNo,
                 Driver_Name: driverName,
                 Mobile: mobile,
+
                 Licence_Expiry_Date: documentDetails?.dl?.expiryDate
                     ? new Date(documentDetails.dl.expiryDate)
                     : null,
+
                 Insurance_Number: documentDetails?.insurance?.policyNo ?? undefined,
+
                 Insurance_Expiry_Date: documentDetails?.insurance?.expiryDate
                     ? new Date(documentDetails.insurance.expiryDate)
                     : null,
+
                 Chassis_Number: documentDetails?.rc?.chassisNo ?? undefined,
+
                 Rc_Expiry_Date: documentDetails?.rc?.expiryDate
                     ? new Date(documentDetails.rc.expiryDate)
                     : null,
+
                 Fitness_Expiry_Date: documentDetails?.fitness?.expiryDate
                     ? new Date(documentDetails.fitness.expiryDate)
                     : null,
+
                 Status: "ReportIn",
-                ReportIn_Time: formatIST(new Date()),
+
+                // ✅ FIX HERE
+                ReportIn_Time: new Date(),
+
                 Zgp: insertResult.responseData?.Message || "N/A",
             },
         });

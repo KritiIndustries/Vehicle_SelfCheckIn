@@ -210,50 +210,13 @@ import {
 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
-const mockVehicles = [
-    {
-        id: "1",
-        token: 24,
-        vehicleNo: "MH 04 AB 1234",
-        driverName: "Rajesh Kumar",
-        doNumber: "DO-784512",
-        rfid: "RF-9988",
-        status: "waiting",
-    },
-    {
-        id: "2",
-        token: 25,
-        vehicleNo: "MP 09 CD 5678",
-        driverName: "Suresh Yadav",
-        doNumber: "DO-784513",
-        rfid: "RF-9989",
-        status: "waiting",
-    },
-    {
-        id: "3",
-        token: 23,
-        vehicleNo: "RJ 14 EF 9012",
-        driverName: "Anil Sharma",
-        doNumber: "DO-784510",
-        rfid: "RF-9987",
-        status: "inside",
-        entryTime: "10:30 AM",
-    },
-    {
-        id: "4",
-        token: 22,
-        vehicleNo: "GJ 05 GH 3456",
-        driverName: "Vikram Singh",
-        doNumber: "DO-784509",
-        rfid: "RF-9986",
-        status: "loading",
-        entryTime: "09:45 AM",
-    },
-];
 
 import axios from "axios";
 import formatApiDate from "@/services/formatApiDate.service";
+import { set } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 export default function GuardDashboard() {
@@ -264,9 +227,11 @@ export default function GuardDashboard() {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showImageModal, setShowImageModal] = useState(false);
+    const [actionLoading, setActionLoading] = useState(null);
 
     const fetchVehicles = async () => {
         try {
+            setLoading(true);
             const res = await axios.get(`${API}/api/guard/getCheckedinDetails`);
 
             const formatted = res.data.data.map((item) => ({
@@ -300,21 +265,29 @@ export default function GuardDashboard() {
 
     const handleCheckIn = async (id) => {
         try {
+            setActionLoading(`checkin-${id}`);
             await axios.patch(`${API}/api/guard/approve/${id}`);
             fetchVehicles();
             setSelectedVehicle(null);
         } catch (err) {
             toast.error("Approval failed");
         }
+        finally {
+            setActionLoading(null);
+        }
     };
 
     const handleCheckOut = async (id) => {
         try {
+            setActionLoading(`checkout-${id}`);
             await axios.patch(`${API}/api/guard/checkout/${id}`);
             fetchVehicles();
             setSelectedVehicle(null);
         } catch (err) {
-            alert("Checkout failed");
+            toast.error("Checkout failed");
+        }
+        finally {
+            setActionLoading(null);
         }
     };
 
@@ -488,7 +461,7 @@ export default function GuardDashboard() {
                                 ...(selectedVehicle.entryTime
                                     ? [
                                         {
-                                            label: "Entry Time",
+                                            label: "Reported Time",
                                             value: formatApiDate(selectedVehicle.entryTime),
                                         },
                                     ]
@@ -523,7 +496,7 @@ export default function GuardDashboard() {
 
                         {selectedVehicle.status === "waiting" && (
                             <>
-                                <button
+                                {/* <button
                                     onClick={() => handleCheckIn(selectedVehicle.id)}
                                     className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3"
                                     style={{
@@ -532,9 +505,28 @@ export default function GuardDashboard() {
                                     }}
                                 >
                                     Approve Entry
-                                </button>
-
+                                </button> */}
                                 <button
+                                    onClick={() => handleCheckIn(selectedVehicle.id)}
+                                    disabled={actionLoading === `checkin-${selectedVehicle.id}`}
+                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-70"
+                                    style={{
+                                        background: "hsl(var(--primary))",
+                                        color: "hsl(var(--primary-foreground))",
+                                    }}
+                                >
+                                    {actionLoading === `checkin-${selectedVehicle.id}` ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        "Approve Entry"
+                                    )}
+                                </button>
+                                {//TODO: add REJECT state}}
+                                }
+                                {/* <button
                                     onClick={() => setShowRejectModal(true)}
                                     className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
                                     style={{
@@ -543,7 +535,7 @@ export default function GuardDashboard() {
                                     }}
                                 >
                                     Reject
-                                </button>
+                                </button> */}
                             </>
                         )}
 
@@ -551,14 +543,26 @@ export default function GuardDashboard() {
                             selectedVehicle.status === "loading") && (
                                 <button
                                     onClick={() => handleCheckOut(selectedVehicle.id)}
+                                    disabled={actionLoading === `checkout-${selectedVehicle.id}`}
                                     className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
                                     style={{
                                         background: "hsl(var(--primary))",
                                         color: "hsl(var(--primary-foreground))",
                                     }}
                                 >
-                                    Check Out
+                                    {actionLoading === `checkout-${selectedVehicle.id}` ? (
+                                        <>
+                                            <Loader2 className="animate-spin w-4 h-4" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        "Check Out"
+                                    )}
+
                                 </button>
+
+
+
                             )}
                     </div>
                 </div>

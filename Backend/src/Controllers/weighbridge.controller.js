@@ -115,11 +115,7 @@ export const weighbridgeUpdate = asyncHandler(async (req, res) => {
         gatePassNo,
         tolerances,
         grossWeight,
-        grossDate,
-        grossTime,
         tareWeight,
-        tareDate,
-        tareTime,
         shift
     } = req.body;
 
@@ -139,13 +135,12 @@ export const weighbridgeUpdate = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid GatePassNo");
     }
 
-    // 🔥 FIND RECORD
     let record = await prisma.weighbridge.findUnique({
         where: { GatePassNo: cleanGatePass }
     });
 
     /* ============================================================
-       STEP 1 — ENTRY
+       STEP 1 — ENTRY ONLY
     ============================================================ */
     if (!record) {
 
@@ -163,78 +158,61 @@ export const weighbridgeUpdate = asyncHandler(async (req, res) => {
             }
         });
 
-        return res.json(new ApiResponse(200, record, "Entry created"));
-    }
-
-    /* ============================================================
-       STEP 2 — TARE FIRST
-    ============================================================ */
-    if (tareWeight && !record.TareWeight) {
-
-        if (isNaN(tareWeight) || Number(tareWeight) <= 0) {
-            throw new ApiError(400, "Invalid tareWeight");
-        }
-
-        const updated = await prisma.weighbridge.update({
-            where: { TicketNo: cleanTicketNo },
-            data: {
-                TareWeight: Number(tareWeight),
-                TareDate: tareDate ? new Date(tareDate) : new Date(),
-                TareTime: tareTime || null,
-                Shift: shift || null
-            }
-        });
-
         return res.json(
-            new ApiResponse(200, updated, "Tare weight updated")
+            new ApiResponse(200, record, "Entry created")
         );
     }
 
     /* ============================================================
-       STEP 3 — GROSS FINAL
+       STEP 2 — FINAL UPDATE (ALL DATA)
     ============================================================ */
-    if (grossWeight && !record.GrossWeight) {
+    if (!record.GrossWeight && !record.TareWeight) {
 
-        if (!record.TareWeight) {
-            throw new ApiError(400, "Tare weight must be entered first");
+        // 🔥 REQUIRED
+        if (!tareWeight || !grossWeight) {
+            throw new ApiError(400, "tareWeight and grossWeight required");
+        }
+
+        if (isNaN(tareWeight) || Number(tareWeight) <= 0) {
+            throw new ApiError(400, "Invalid tareWeight");
         }
 
         if (isNaN(grossWeight) || Number(grossWeight) <= 0) {
             throw new ApiError(400, "Invalid grossWeight");
         }
 
-        const netWeight = Number(grossWeight) - Number(record.TareWeight);
+        const netWeight = Number(grossWeight) - Number(tareWeight);
 
         if (netWeight < 0) {
-            throw new ApiError(400, "Gross weight cannot be less than tare weight");
+            throw new ApiError(400, "Gross cannot be less than tare");
         }
-
-        const duration =
-            record.TareDate && grossDate
-                ? Math.floor(
-                    (new Date(grossDate) - new Date(record.TareDate)) / 60000
-                )
-                : null;
 
         const updated = await prisma.weighbridge.update({
             where: { TicketNo: cleanTicketNo },
             data: {
+                TareWeight: Number(tareWeight),
+                TareDate: new Date(),
+
                 GrossWeight: Number(grossWeight),
-                GrossDate: grossDate ? new Date(grossDate) : new Date(),
-                GrossTime: grossTime || null,
+                GrossDate: new Date(),
+
                 NetWeight: netWeight,
                 Tolerances: tolerances ? Number(tolerances) : null,
-                Duration: duration
+                Shift: shift || null,
+
+                Duration: Math.floor(
+                    (new Date() - new Date(record.Created_At)) / 60000
+                )
             }
         });
 
         return res.json(
-            new ApiResponse(200, updated, "Final weight updated")
+            new ApiResponse(200, updated, "Weighbridge completed")
         );
     }
 
     return res.status(400).json(
-        new ApiResponse(400, record, "No valid operation")
+        new ApiResponse(400, record, "Already completed")
     );
 });
 
