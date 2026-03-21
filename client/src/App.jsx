@@ -17,6 +17,7 @@ import CheckinSuccess from "./pages/driver/CheckinSuccess";
 import GuardLogin from "./pages/guard/GuardLogin";
 import GuardDashboard from "./pages/guard/GuardDashboard";
 import GeoGuard from "./pages/guard/GeoGuard";
+import ValidateHomePage from "./pages/driver/ValidateHomePage";
 
 
 const queryClient = new QueryClient();
@@ -49,7 +50,8 @@ const App = () => (
           } />
           <Route path="/d" element={
             <GeoGuard>
-              <DriverDetails />
+              {/* <DriverDetails /> */}
+              <ValidateHomePage />
             </GeoGuard>
           } />
           <Route path="/driver/documents" element={

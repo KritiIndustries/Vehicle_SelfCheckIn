@@ -32,11 +32,6 @@ const DriverDetails = () => {
     /* ========================= */
 
     useEffect(() => {
-        if (!doValue) {
-            toast.error("कृपया डीलर से लिंक प्राप्त करें।.");
-            speak("कृपया डीलर से लिंक प्राप्त करें");
-            return;
-        }
 
         const instructionText = "namashkaarr !! कास्ता  में आपका स्वागत है कृपया अपना विवरण दर्ज करें";
         speak(instructionText);

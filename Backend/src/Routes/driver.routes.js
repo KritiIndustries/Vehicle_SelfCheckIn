@@ -2,7 +2,7 @@ import { Router } from "express";
 import authMiddleware from "../Middlewares/authMiddleware.js";
 import ipRestrictionMiddleware from "../Middlewares/ipRestriction.middleware.js";
 import geofenceMiddleware from "../Middlewares/geofence.middleware.js";
-import { finalizeCheckin, uploadDoc, uploadTempDocument, uploadTempSelfie, uploadTempDocuments } from "../Controllers/driver.controller.js";
+import { finalizeCheckin, uploadDoc, uploadTempDocument, uploadTempSelfie, uploadTempDocuments, validatePage } from "../Controllers/driver.controller.js";
 import { upload } from "../Middlewares/multer.middleware.js";
 import multer from "multer";
 const router = Router();
@@ -68,4 +68,5 @@ router.post(
     uploadTempDocuments
 );
 router.post("/finalize", finalizeCheckin);
+router.get('/validatePage/:do', validatePage)
 export default router;

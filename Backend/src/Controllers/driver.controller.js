@@ -445,7 +445,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     const tokenAndcookie = await fetchCsrfToken(secondaryURL);
 
     const insertResult = await insertZGP(payload, tokenAndcookie);
-    console.log("insertResult", insertResult);
+
 
     if (!insertResult || !insertResult.success) {
         throw new ApiError(
@@ -565,3 +565,18 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         .status(201)
         .json(new ApiResponse(201, result, "Check-in successful"));
 });
+
+export const validatePage = asyncHandler(async (req, res) => {
+    const DO = req.params.do;
+    const entry = await prisma.driver_Checkin.findFirst({
+        where: {
+            Do_No: DO,
+            Status: {
+                not: "CheckedOut"
+            }
+        },
+    });
+    if (!entry) throw new ApiError(404, "Driver not found");
+
+    return res.status(200).json(new ApiResponse(200, entry, "Driver found"));
+})

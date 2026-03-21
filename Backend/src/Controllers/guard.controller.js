@@ -26,6 +26,7 @@ const postToZgp = async (payload) => {
         "http://ktappdq.kritiindia.com:8010/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet";
     const token = await fetchCsrfToken(url);
 
+
     const response = await axios.post(url, payload, {
         headers: {
             "Content-Type": "application/json",
@@ -36,6 +37,8 @@ const postToZgp = async (payload) => {
     });
 
     const responseData = response.data?.d || {};
+
+
     if (responseData.Success === false) {
         throw new ApiError(502, responseData.Message || "ZGP API failed");
     }
@@ -160,7 +163,10 @@ export const approveEntry = asyncHandler(async (req, res) => {
         ChkInTime: formatSapTime(now),
     };
 
+
     await postToZgp(payload);
+
+
 
     const result = await prisma.$transaction(async (tx) => {
 
@@ -198,6 +204,9 @@ export const checkoutVehicle = asyncHandler(async (req, res) => {
     const weightbridge = await prisma.weighbridge.findUnique({
         where: { GatePassNo: checkin.Zgp }
     })
+
+    //TODO:Unable this after integration
+    // if (!weightbridge) throw new ApiError(404, "Weightbridge not found");
     if (!checkin) throw new ApiError(404, "Checkin not found");
     if (!checkin.Zgp) throw new ApiError(400, "GatePass (ZGP) not found for this record");
     const now = new Date();
