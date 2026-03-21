@@ -520,12 +520,36 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
             },
         });
 
+
+        // for (const upload of tempUploads) {
+        //     await tx.driver_Documents.create({
+        //         data: {
+        //             Driver_Checkin_Id: checkin.Id,
+        //             Doc_Type: upload.Doc_Type,
+        //             Image_Path: upload.Image_Path,
+        //             Verified: false
+        //         }
+        //     });
+        // }
+        const expiryMap = {
+            dl: documentDetails?.dl?.expiryDate,
+            rc: documentDetails?.rc?.expiryDate,
+            insurance: documentDetails?.insurance?.expiryDate,
+            fitness: documentDetails?.fitness?.expiryDate
+        };
+
         for (const upload of tempUploads) {
+
+            const expiryDate = expiryMap[upload.Doc_Type]
+                ? new Date(expiryMap[upload.Doc_Type])
+                : null;
+
             await tx.driver_Documents.create({
                 data: {
                     Driver_Checkin_Id: checkin.Id,
                     Doc_Type: upload.Doc_Type,
                     Image_Path: upload.Image_Path,
+                    Expiry_Date: expiryDate,
                     Verified: false
                 }
             });

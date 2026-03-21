@@ -266,13 +266,31 @@ export default function GuardDashboard() {
     const handleCheckIn = async (id) => {
         try {
             setActionLoading(`checkin-${id}`);
-            await axios.patch(`${API}/api/guard/approve/${id}`);
+
+            const token = localStorage.getItem("guardToken");
+            console.log("TOKEN:", token);
+
+            if (!token) {
+                toast.error("Session expired. Please login again.");
+                return;
+            }
+
+            await axios.patch(
+                `${API}/api/guard/approve/${id}`,
+                {},
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
             fetchVehicles();
             setSelectedVehicle(null);
+
         } catch (err) {
-            toast.error("Approval failed");
-        }
-        finally {
+            toast.error(err?.response?.data?.message || "Approval failed");
+        } finally {
             setActionLoading(null);
         }
     };

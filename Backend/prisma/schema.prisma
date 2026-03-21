@@ -109,7 +109,7 @@ model Driver_Temp_Upload {
 model Weighbridge {
   Id            Int      @id @default(autoincrement())
 
-  TicketNo      String   @unique
+  TicketNo      String?   @unique
   VehicleNo     String
   TagNo         String?
 

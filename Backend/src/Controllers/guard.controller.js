@@ -123,7 +123,7 @@ export const getCheckedinDetails = asyncHandler(async (req, res) => {
             }
         }
     });
-//TODO:Check wiehtbrage table , if there is same pass number then allow gaurd to checkin
+    //TODO:Check wiehtbrage table , if there is same pass number then allow gaurd to checkin
     const formatted = details.map(item => ({
         ...item,
         Documents: item.Documents.map(doc => ({
@@ -147,9 +147,12 @@ export const approveEntry = asyncHandler(async (req, res) => {
     const checkin = await prisma.driver_Checkin.findUnique({
         where: { Id: id },
     });
+
     if (!checkin) throw new ApiError(404, "Checkin not found");
     if (!checkin.Zgp) throw new ApiError(400, "GatePass (ZGP) not found for this record");
-
+    if (!req.user?.id) {
+        throw new ApiError(401, "Unauthorized");
+    }
     const now = new Date();
     const payload = {
         GatePass: checkin.Zgp,
@@ -159,15 +162,30 @@ export const approveEntry = asyncHandler(async (req, res) => {
 
     await postToZgp(payload);
 
-    const updated = await prisma.driver_Checkin.update({
-        where: { Id: id },
-        data: {
-            Status: "CheckedIn",
-            Entry_Time: now,
-        },
+    const result = await prisma.$transaction(async (tx) => {
+
+        // STEP 1: update checkin
+        const updated = await tx.driver_Checkin.update({
+            where: { Id: id },
+            data: {
+                Status: "CheckedIn",
+                Entry_Time: now,
+            },
+        });
+
+        // STEP 2: update documents ONLY if above succeeds
+        await tx.driver_Documents.updateMany({
+            where: { Driver_Checkin_Id: id },
+            data: {
+                Verified: true,
+                Verified_By: req.user.id
+            }
+        });
+
+        return updated;
     });
 
-    return res.status(200).json(new ApiResponse(200, updated, "Check-in saved"));
+    return res.status(200).json(new ApiResponse(200, result, "Check-in saved"));
 });
 
 export const checkoutVehicle = asyncHandler(async (req, res) => {
@@ -177,14 +195,18 @@ export const checkoutVehicle = asyncHandler(async (req, res) => {
     const checkin = await prisma.driver_Checkin.findUnique({
         where: { Id: id },
     });
+    const weightbridge = await prisma.weighbridge.findUnique({
+        where: { GatePassNo: checkin.Zgp }
+    })
     if (!checkin) throw new ApiError(404, "Checkin not found");
     if (!checkin.Zgp) throw new ApiError(400, "GatePass (ZGP) not found for this record");
-
     const now = new Date();
     const payload = {
         GatePass: checkin.Zgp,
         LeaveDate: formatSapDate(now),
         LeaveTime: formatSapTime(now),
+        UnladenWeight: weightbridge?.TareWeight?.toString() || "8000",
+        LadenWeight: weightbridge?.GrossWeight?.toString() || "15000",
     };
 
     await postToZgp(payload);

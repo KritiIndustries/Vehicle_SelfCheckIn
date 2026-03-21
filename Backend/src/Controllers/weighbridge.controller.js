@@ -116,14 +116,15 @@ export const weighbridgeUpdate = asyncHandler(async (req, res) => {
         tolerances,
         grossWeight,
         tareWeight,
-        shift
+        shift,
+        netWeight
     } = req.body;
 
-    if (!ticketNo || !gatePassNo) {
+    if (!gatePassNo) {
         throw new ApiError(400, "ticketNo and gatePassNo are required");
     }
 
-    const cleanTicketNo = String(ticketNo).trim();
+    const cleanTicketNo = ticketNo ? String(ticketNo).trim() : null;
     const cleanGatePass = String(gatePassNo).trim();
 
     // 🔥 CHECK DRIVER_CHECKIN
@@ -150,7 +151,7 @@ export const weighbridgeUpdate = asyncHandler(async (req, res) => {
 
         record = await prisma.weighbridge.create({
             data: {
-                TicketNo: cleanTicketNo,
+
                 VehicleNo: vehicleNo,
                 TagNo: tagNo,
                 Transporter: transporter,
@@ -181,25 +182,17 @@ export const weighbridgeUpdate = asyncHandler(async (req, res) => {
             throw new ApiError(400, "Invalid grossWeight");
         }
 
-        const netWeight = Number(grossWeight) - Number(tareWeight);
-
-        if (netWeight < 0) {
-            throw new ApiError(400, "Gross cannot be less than tare");
-        }
-
         const updated = await prisma.weighbridge.update({
-            where: { TicketNo: cleanTicketNo },
+            where: { GatePassNo: cleanGatePass },
             data: {
+                TicketNo: cleanTicketNo,
                 TareWeight: Number(tareWeight),
                 TareDate: new Date(),
-
                 GrossWeight: Number(grossWeight),
                 GrossDate: new Date(),
-
                 NetWeight: netWeight,
                 Tolerances: tolerances ? Number(tolerances) : null,
                 Shift: shift || null,
-
                 Duration: Math.floor(
                     (new Date() - new Date(record.Created_At)) / 60000
                 )
