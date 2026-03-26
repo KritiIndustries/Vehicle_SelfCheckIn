@@ -316,7 +316,7 @@ export default function GuardDashboard() {
     }, []);
     return (
         <div className="mobile-container">
-            <AppHeader showAudio={false} />
+            <AppHeader showAudio={false} showLogOut={true} />
 
             {/* HEADER */}
             <div className="px-5 pt-4 pb-2">

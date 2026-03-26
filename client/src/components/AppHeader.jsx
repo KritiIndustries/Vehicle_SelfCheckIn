@@ -21,8 +21,16 @@
 //     );
 // };
 import { Volume2, VolumeX } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-const AppHeader = ({ showAudio = true, audioEnabled, onToggleAudio }) => {
+
+const AppHeader = ({ showAudio = true, audioEnabled, onToggleAudio, showLogOut }) => {
+    const navigate = useNavigate()
+    const logoutGuard = () => {
+        localStorage.clear();
+        navigate("/guard/login")
+    }
     return (
         <header
             className="flex items-center justify-between px-5 py-3"
@@ -65,6 +73,19 @@ const AppHeader = ({ showAudio = true, audioEnabled, onToggleAudio }) => {
                     )}
                 </button>
             )}
+            {
+                showLogOut && (
+                    <button
+                        onClick={logoutGuard}
+                        className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                        style={{ background: "hsl(var(--muted))" }}
+
+                    >
+                        <LogOut className="w-4 h-4" />
+
+                    </button>
+                )
+            }
         </header>
     );
 };

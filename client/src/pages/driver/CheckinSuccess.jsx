@@ -21,7 +21,7 @@ const CheckinSuccess = () => {
     ];
     useEffect(() => {
         if (data) {
-            const message = `रिपोर्टिंग सफल रही! आपका वेटिंग नंबर ${data.Id} है। कृपया गेट नंबर 1 पर जाएं।`;
+            const message = `रिपोर्टिंग सफल रही! आपका वेटिंग नंबर ${data.Id} है   कृपया गेट नंबर 1 पर जाएं।`;
             speak(message);
         }
 

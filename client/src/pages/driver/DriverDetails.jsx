@@ -32,7 +32,6 @@ const DriverDetails = () => {
     /* ========================= */
 
     useEffect(() => {
-
         const instructionText = "namashkaarr !! कास्ता  में आपका स्वागत है कृपया अपना विवरण दर्ज करें";
         speak(instructionText);
     }, [doValidated]);

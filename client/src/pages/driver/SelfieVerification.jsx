@@ -77,6 +77,11 @@ const SelfieVerification = () => {
 
         try {
             setUploading(true);
+            const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
+            const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+
+            const vehicleNo =
+                ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
             setProgress(0);
 
             const previewUrl = URL.createObjectURL(file);
@@ -85,6 +90,8 @@ const SelfieVerification = () => {
             const formData = new FormData();
             formData.append("sessionId", sessionId);
             formData.append("doNumber", value?.doNumber);
+            formData.append("vehicleNo", vehicleNo);
+
             formData.append("selfie", file);
 
             await axios.post(`${API}/api/driver/upload-selfie`, formData, {

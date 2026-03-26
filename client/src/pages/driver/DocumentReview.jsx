@@ -20,6 +20,7 @@ const DocumentReview = () => {
 
 
   useEffect(() => {
+    speak('कृपया अपने डॉक्यूमेंट्स की जांच करें');
     const raw = sessionStorage.getItem("ocrData");
     if (!raw) {
       navigate("/driver/documents");
@@ -47,7 +48,7 @@ const DocumentReview = () => {
         expiryDate: parsed?.fitness?.fields?.expiryDate || "",
       },
     });
-  }, [navigate]);
+  }, [navigate,speak]);
 
   const handleChange = (section, field, value) => {
     setDocs((prev) => ({
@@ -68,10 +69,10 @@ const DocumentReview = () => {
     <div className="mobile-container border-green-500">
       <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
 
-      {/* <InfoBanner
+      <InfoBanner
         text="Please confirm your document details"
         textHi="कृपया अपने दस्तावेज़ विवरण की पुष्टि करें"
-      /> */}
+      /> 
 
       <div className="page-content  ">
         <StepIndicator

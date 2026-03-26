@@ -64,6 +64,8 @@ import parseRC from "../services/parsers/parseRC.js";
 import parseFitness from "../services/parsers/parseFitness.js";
 import parseInsurance from "../services/parsers/parseInsurance.js";
 import { formatIST } from "../services/dates.service.js";
+import { cleanVehicleNo, extractVehicleNumbersFromSelfie } from "../services/extractVehicleNumberFromSelfie.js";
+
 
 
 export const uploadTempDocument = asyncHandler(async (req, res) => {
@@ -329,15 +331,138 @@ export const uploadTempDocuments = asyncHandler(async (req, res) => {
     );
 });
 
+// export const uploadTempSelfie = asyncHandler(async (req, res) => {
+//     if (!req.file) {
+//         throw new ApiError(400, "No selfie uploaded");
+//     }
+
+//     const { sessionId, doNumber } = req.body;
+
+//     if (!sessionId || typeof sessionId !== "string") {
+//         throw new ApiError(400, "Invalid sessionId");
+//     }
+
+//     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
+//         where: {
+//             Session_Id: sessionId,
+//             Is_Selfie: true,
+//         },
+//     });
+
+//     if (existingSelfie) {
+//         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
+//     }
+
+
+//     // if (req.file.mimetype.startsWith("image/")) {
+//     //     await ensureImageQuality(req.file.buffer);
+//     // }
+
+//     // Upload selfie to S3 and store URL
+//     const url = await uploadToS3(req.file, doNumber, "selfie");
+//     if (!url) {
+//         throw new ApiError(500, "S3 upload failed");
+//     }
+
+//     await prisma.driver_Temp_Upload.create({
+//         data: {
+//             Session_Id: sessionId,
+//             Doc_Type: "selfie",
+//             Image_Path: url,
+//             Is_Selfie: true,
+//             Created_At: new Date()
+//         },
+//     });
+
+//     return res.json(new ApiResponse(200, { fileUrl: url }, "Selfie uploaded"));
+// });
+
+// export const uploadTempSelfie = asyncHandler(async (req, res) => {
+//     if (!req.file) {
+//         throw new ApiError(400, "No selfie uploaded");
+//     }
+
+//     const { sessionId, doNumber, vehicleNo } = req.body;
+
+//     if (!sessionId || typeof sessionId !== "string") {
+//         throw new ApiError(400, "Invalid sessionId");
+//     }
+
+//     if (!vehicleNo) {
+//         throw new ApiError(400, "Vehicle number required for validation");
+//     }
+
+//     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
+//         where: {
+//             Session_Id: sessionId,
+//             Is_Selfie: true,
+//         },
+//     });
+
+//     if (existingSelfie) {
+//         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
+//     }
+
+//     // ✅ Upload to S3
+//     const url = await uploadToS3(req.file, doNumber, "selfie");
+
+//     if (!url) {
+//         throw new ApiError(500, "S3 upload failed");
+//     }
+
+//     // 🔥 OCR EXTRACT NUMBER PLATE
+//     const detectedVehicleNo = await extractVehicleNumberFromSelfie(url);
+
+//     if (!detectedVehicleNo) {
+//         throw new ApiError(
+//             400,
+//             "Vehicle number not detected. Please stand closer and retake selfie."
+//         );
+//     }
+
+//     // 🔥 VALIDATION
+//     if (!isVehicleMatch(detectedVehicleNo, vehicleNo)) {
+//         throw new ApiError(
+//             400,
+//             `Vehicle mismatch. Found ${detectedVehicleNo}, expected ${vehicleNo}`
+//         );
+//     }
+
+//     // ✅ SAVE
+//     await prisma.driver_Temp_Upload.create({
+//         data: {
+//             Session_Id: sessionId,
+//             Doc_Type: "selfie",
+//             Image_Path: url,
+//             Is_Selfie: true,
+//             Created_At: new Date()
+//         },
+//     });
+
+//     return res.json(
+//         new ApiResponse(
+//             200,
+//             {
+//                 fileUrl: url,
+//                 detectedVehicleNo
+//             },
+//             "Selfie verified successfully"
+//         )
+//     );
+// });
 export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!req.file) {
         throw new ApiError(400, "No selfie uploaded");
     }
 
-    const { sessionId, doNumber } = req.body;
+    const { sessionId, doNumber, vehicleNo } = req.body;
 
     if (!sessionId || typeof sessionId !== "string") {
         throw new ApiError(400, "Invalid sessionId");
+    }
+
+    if (!vehicleNo) {
+        throw new ApiError(400, "Vehicle number required");
     }
 
     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
@@ -351,16 +476,47 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
     }
 
-    // if (req.file.mimetype.startsWith("image/")) {
-    //     await ensureImageQuality(req.file.buffer);
-    // }
-
-    // Upload selfie to S3 and store URL
+    // ✅ Upload
     const url = await uploadToS3(req.file, doNumber, "selfie");
+
     if (!url) {
         throw new ApiError(500, "S3 upload failed");
     }
 
+    // 🔥 DETECT ALL VEHICLE NUMBERS
+    const detectedList = await extractVehicleNumbersFromSelfie(url);
+
+    if (!detectedList.length) {
+        throw new ApiError(
+            400,
+            "Vehicle number not detected. Please retake selfie properly."
+        );
+    }
+
+    const cleanExpected = cleanVehicleNo(vehicleNo);
+
+    // 🔥 STRICT MATCH ONLY (PRODUCTION SAFE)
+    // 🔥 FULL + PARTIAL MATCH SUPPORT
+    const match = detectedList.find(v => {
+        const cleanDetected = cleanVehicleNo(v);
+
+        // ✅ full match
+        if (cleanDetected === cleanExpected) return true;
+
+        // ✅ prefix match (MH18AA matches MH18AA9822)
+        if (cleanExpected.startsWith(cleanDetected)) return true;
+
+        return false;
+    });
+
+    if (!match) {
+        throw new ApiError(
+            400,
+            `Vehicle mismatch. Found: ${detectedList.join(", ")}`
+        );
+    }
+
+    // ✅ SAVE
     await prisma.driver_Temp_Upload.create({
         data: {
             Session_Id: sessionId,
@@ -371,9 +527,17 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         },
     });
 
-    return res.json(new ApiResponse(200, { fileUrl: url }, "Selfie uploaded"));
+    return res.json(
+        new ApiResponse(
+            200,
+            {
+                fileUrl: url,
+                detectedVehicleNo: match
+            },
+            "Selfie verified successfully"
+        )
+    );
 });
-
 export const finalizeCheckin = asyncHandler(async (req, res) => {
     const {
         sessionId,
