@@ -64,11 +64,27 @@ const parseFitness = (lines) => {
 
     // 🔥 STEP 1: Try keyword-based detection (your existing logic)
     const expireRegex =
-        /(EXPIRE|EXPIRES|EXPIRY|VALID\s*TILL|VALID\s*UP\s*TO|VALID\s*UPTO)[^0-9]{0,50}(\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4})/i;
+        /(EXPIRE\s*ON|EXPIRY\s*ON|EXPIRE|EXPIRES|EXPIRY|VALID\s*TILL|VALID\s*UP\s*TO|VALID\s*UPTO)[^0-9]{0,80}(\d{1,2}[-\/](?:\d{1,2}|[A-Z]{3})[-\/]\d{2,4})/i;
 
+    // for (let i = 0; i < normalized.length; i++) {
+    //     const line = normalized[i];
+    //     const match = line.match(expireRegex);
+
+    //     if (match) {
+    //         return {
+    //             expiryDate: convertToSqlDate(match[2]),
+    //             chassisNo
+    //         };
+    //     }
+    // }
     for (let i = 0; i < normalized.length; i++) {
-        const line = normalized[i];
-        const match = line.match(expireRegex);
+        const combined = [
+            normalized[i],
+            normalized[i + 1],
+            normalized[i + 2]
+        ].join(" ");
+
+        const match = combined.match(expireRegex);
 
         if (match) {
             return {

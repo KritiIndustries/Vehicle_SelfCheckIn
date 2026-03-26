@@ -740,7 +740,7 @@ export const validatePage = asyncHandler(async (req, res) => {
             }
         },
     });
-    if (!entry) throw new ApiError(404, "Driver not found");
+    if (!entry) throw new ApiError(404, "Details not found");
 
-    return res.status(200).json(new ApiResponse(200, entry, "Driver found"));
+    return res.status(200).json(new ApiResponse(200, entry, "Details found"));
 })
