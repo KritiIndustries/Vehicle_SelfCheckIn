@@ -647,6 +647,19 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
 
     // 🔥 TRANSACTION (Very Important)
     const result = await prisma.$transaction(async (tx) => {
+        // ✅ Find last token assigned today and add 1
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const lastToken = await tx.driver_Checkin.findFirst({
+            where: {
+                ReportIn_Time: { gte: todayStart }
+            },
+            orderBy: { Token: "desc" },
+            select: { Token: true }
+        });
+        const tokenNo = (lastToken?.Token ?? 0) + 1;
+        // e.g. last token today = 5 → new token = 6
+        // e.g. first driver today → last = null → 0 + 1 = 1
 
         const checkin = await tx.driver_Checkin.create({
             data: {
@@ -654,7 +667,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
                 Vehicle_No: vehicleNo,
                 Driver_Name: driverName,
                 Mobile: mobile,
-
+                Token: tokenNo, // ✅ stored
                 Licence_Expiry_Date: documentDetails?.dl?.expiryDate
                     ? new Date(documentDetails.dl.expiryDate)
                     : null,

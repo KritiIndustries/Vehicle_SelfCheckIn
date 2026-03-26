@@ -21,11 +21,13 @@ const CheckinSuccess = () => {
     ];
     useEffect(() => {
         if (data) {
-            const message = `रिपोर्टिंग सफल रही! आपका वेटिंग नंबर ${data.Id} है   कृपया गेट नंबर 1 पर जाएं।`;
+            const token = data.Token ?? data.Id;
+            const waiting = data.waitingNumber ?? data.Id;
+            const message = `रिपोर्टिंग सफल रही! आपका टोकन ${token} और वेटिंग नंबर ${waiting} है। कृपया गेट नंबर 1 पर जाएं।`;
             speak(message);
         }
 
-    }, [data, speak,toggleAudio]);
+    }, [data, speak, toggleAudio]);
 
     return (
         <div className="mobile-container">
@@ -71,18 +73,26 @@ const CheckinSuccess = () => {
                             borderColor: "hsl(var(--border))",
                         }}
                     >
-                        <span
-                            className="text-5xl font-bold"
-                            style={{ color: "hsl(var(--primary))" }}
-                        >
-                            #{data.Id}
-                        </span>
-                        <p
-                            className="text-sm mt-1"
-                            style={{ color: "hsl(var(--muted-foreground))" }}
-                        >
-                            Waiting Number / प्रतीक्षा क्रमांक
-                        </p>
+                        <div className="flex flex-col items-center">
+                            <span
+                                className="text-3xl font-semibold"
+                                style={{ color: "hsl(var(--primary))" }}
+                            >
+                                Token: #{data.Token ?? data.Id}
+                            </span>
+                            <span
+                                className="text-5xl font-bold"
+                                style={{ color: "hsl(var(--primary))" }}
+                            >
+                                #{data.waitingNumber ?? data.Id}
+                            </span>
+                            <p
+                                className="text-sm mt-1"
+                                style={{ color: "hsl(var(--muted-foreground))" }}
+                            >
+                                Waiting Number / प्रतीक्षा क्रमांक
+                            </p>
+                        </div>
                     </div>
 
                     <div className="px-6 py-4 space-y-3">

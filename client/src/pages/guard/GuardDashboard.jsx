@@ -242,6 +242,7 @@ export default function GuardDashboard() {
                 status: mapStatus(item.Status),
                 entryTime: item.ReportIn_Time ?? item.Entry_Time,
                 documents: item.Documents,
+                Token: item.Token
             }));
 
             setVehicles(formatted);
@@ -268,7 +269,7 @@ export default function GuardDashboard() {
             setActionLoading(`checkin-${id}`);
 
             const token = localStorage.getItem("guardToken");
-            console.log("TOKEN:", token);
+
 
             if (!token) {
                 toast.error("Session expired. Please login again.");
@@ -390,7 +391,7 @@ export default function GuardDashboard() {
                                 className="text-sm font-bold"
                                 style={{ color: "hsl(var(--primary))" }}
                             >
-                                #{v.id}
+                                #{v.Token}
                             </span>
                         </div>
 
@@ -472,7 +473,7 @@ export default function GuardDashboard() {
 
                         <div className="space-y-3 mb-6">
                             {[
-                                { label: "Token", value: `#${selectedVehicle.id}` },
+                                { label: "Token", value: `#${selectedVehicle.Token}` },
                                 { label: "DO Number", value: selectedVehicle.doNumber },
                                 { label: "RFID", value: selectedVehicle.rfid },
                                 { label: "Status", value: selectedVehicle.status },

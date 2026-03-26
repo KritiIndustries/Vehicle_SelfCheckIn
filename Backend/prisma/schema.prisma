@@ -52,6 +52,7 @@ model Driver_Checkin {
   Status                 String   @default("Pending")
 
   Zgp                    String?  @unique
+  Token                  Int?
   ReportIn_Time          DateTime?
   Entry_Time             DateTime?
   Exit_Time              DateTime?

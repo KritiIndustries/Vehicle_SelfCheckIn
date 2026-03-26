@@ -107,9 +107,7 @@ export const getCheckedinDetails = asyncHandler(async (req, res) => {
                 in: ["ReportIn", "CheckedIn"] // This looks for both statuses
             }
         },
-        orderBy: {
-            ReportIn_Time: "desc"
-        },
+
         include: {
             Documents: {
                 orderBy: {
@@ -166,11 +164,9 @@ export const approveEntry = asyncHandler(async (req, res) => {
 
     await postToZgp(payload);
 
-
-
     const result = await prisma.$transaction(async (tx) => {
 
-        // STEP 1: update checkin
+        // STEP 1: update checkin status
         const updated = await tx.driver_Checkin.update({
             where: { Id: id },
             data: {
@@ -179,7 +175,7 @@ export const approveEntry = asyncHandler(async (req, res) => {
             },
         });
 
-        // STEP 2: update documents ONLY if above succeeds
+        // STEP 2: update documents
         await tx.driver_Documents.updateMany({
             where: { Driver_Checkin_Id: id },
             data: {
@@ -187,6 +183,26 @@ export const approveEntry = asyncHandler(async (req, res) => {
                 Verified_By: req.user.id
             }
         });
+
+        // STEP 3: Decrement Token for all ReportIn drivers AFTER me
+        // ✅ Token not Token_No, and guard against null Token
+        if (checkin.Token !== null) {
+            await tx.driver_Checkin.updateMany({
+                where: {
+                    Status: "ReportIn",
+                    Token: { gt: checkin.Token }   // ✅ Token not Token_No
+                },
+                data: {
+                    Token: { decrement: 1 }         // ✅ Token not Token_No
+                }
+            });
+
+            // STEP 4: Set my own token to 0
+            await tx.driver_Checkin.update({
+                where: { Id: id },
+                data: { Token: 0 }                  // ✅ Token not Token_No
+            });
+        }
 
         return updated;
     });
