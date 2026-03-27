@@ -1,9 +1,640 @@
+// import { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
+// import AppHeader from "@/components/AppHeader";
+// import StepIndicator from "@/components/StepIndicator";
+// import InfoBanner from "@/components/InfoBanner";
+// import usePageAudio from "@/hooks/usePageAudio";
+// import { CheckExpiryDate } from "@/Helpers/CheckExpiryDate";
+
+// const emptyState = {
+//   dl: { name: "", licenseNo: "", expiryDate: "" },
+//   insurance: { policyNo: "", expiryDate: "" },
+//   rc: { vehicleNo: "", chassisNo: "", expiryDate: "" },
+//   fitness: { expiryDate: "" },
+// };
+
+// const DocumentReview = () => {
+//   const navigate = useNavigate();
+
+//   const [docs, setDocs] = useState(emptyState);
+//   const [speak, audioEnabled, toggleAudio] = usePageAudio();
+//   const [isDoumentExpired, setIsDoumentExpired] = useState(false);
+
+
+//   useEffect(() => {
+//     speak('कृपया अपने डॉक्यूमेंट्स की जांच करें');
+//     const raw = sessionStorage.getItem("ocrData");
+//     if (!raw) {
+//       navigate("/driver/documents");
+//       return;
+//     }
+
+//     const parsed = JSON.parse(raw || "{}");
+
+//     setDocs({
+//       dl: {
+//         name: parsed?.dl?.fields?.name || "",
+//         licenseNo: parsed?.dl?.fields?.licenseNo || "",
+//         expiryDate: parsed?.dl?.fields?.expiryDate || "",
+//       },
+//       insurance: {
+//         policyNo: parsed?.insurance?.fields?.policyNo || "",
+//         expiryDate: parsed?.insurance?.fields?.expiryDate || "",
+//       },
+//       rc: {
+//         vehicleNo: parsed?.rc?.fields?.vehicleNo || "",
+//         chassisNo: parsed?.rc?.fields?.chassisNo || "",
+//         expiryDate: parsed?.rc?.fields?.expiryDate || "",
+//       },
+//       fitness: {
+//         expiryDate: parsed?.fitness?.fields?.expiryDate || "",
+//       },
+//     });
+//     const expiredDocs = {
+//       dl: docs.dl.expiryDate && !CheckExpiryDate(docs.dl.expiryDate),
+//       insurance: docs.insurance.expiryDate && !CheckExpiryDate(docs.insurance.expiryDate),
+//       rc: docs.rc.expiryDate && !CheckExpiryDate(docs.rc.expiryDate),
+//       fitness: docs.fitness.expiryDate && !CheckExpiryDate(docs.fitness.expiryDate),
+//     };
+
+//     const hasExpiredDoc = Object.values(expiredDocs).some(Boolean);
+//     if (hasExpiredDoc) {
+//       const expiredNames = [
+//         expiredDocs.dl && "Driving License",
+//         expiredDocs.insurance && "Insurance",
+//         expiredDocs.rc && "RC",
+//         expiredDocs.fitness && "Fitness Certificate",
+//       ].filter(Boolean).join(", ");
+
+//       toast.error(`Expired documents: ${expiredNames}`);
+//       speak(`यह दस्तावेज़ समाप्त हो गए हैं: ${expiredNames}। कृपया Renew करें।`);
+//       return;
+//     }
+
+//   }, [navigate, speak]);
+
+//   const handleChange = (section, field, value) => {
+//     setDocs((prev) => ({
+//       ...prev,
+//       [section]: {
+//         ...prev[section],
+//         [field]: value,
+//       },
+//     }));
+//   };
+//   // ✅ Check which docs are expired
+//   const expiredDocs = {
+//     dl: docs.dl.expiryDate && !CheckExpiryDate(docs.dl.expiryDate),
+//     insurance: docs.insurance.expiryDate && !CheckExpiryDate(docs.insurance.expiryDate),
+//     rc: docs.rc.expiryDate && !CheckExpiryDate(docs.rc.expiryDate),
+//     fitness: docs.fitness.expiryDate && !CheckExpiryDate(docs.fitness.expiryDate),
+//   };
+
+//   const hasExpiredDoc = Object.values(expiredDocs).some(Boolean);
+
+//   // const handleNext = () => {
+//   //   sessionStorage.setItem("ocrConfirmedData", JSON.stringify(docs));
+//   //   navigate("/driver/selfie");
+//   // };
+//   const handleNext = () => {
+//     // ✅ Block if any document is expired
+//     if (hasExpiredDoc) {
+//       const expiredNames = [
+//         expiredDocs.dl && "Driving License",
+//         expiredDocs.insurance && "Insurance",
+//         expiredDocs.rc && "RC",
+//         expiredDocs.fitness && "Fitness Certificate",
+//       ].filter(Boolean).join(", ");
+
+//       toast.error(`Expired documents: ${expiredNames}`);
+//       speak(`यह दस्तावेज़ समाप्त हो गए हैं: ${expiredNames}। कृपया Renew करें।`);
+//       return;
+//     }
+
+//     sessionStorage.setItem("ocrConfirmedData", JSON.stringify(docs));
+//     navigate("/driver/selfie");
+//   };
+//   // ✅ Helper — border class based on expiry
+//   const sectionBorder = (key, defaultColor) =>
+//     expiredDocs[key]
+//       ? "border-red-500 bg-red-50"
+//       : `border-${defaultColor}-200 bg-white`;
+
+//   const inputBorder = (key) =>
+//     expiredDocs[key]
+//       ? "border-red-400 bg-red-50"
+//       : "border-default-medium bg-neutral-secondary-medium";
+
+//   // return (
+//   //   <div className="mobile-container border-green-500">
+//   //     <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
+
+//   //     <InfoBanner
+//   //       text="Please confirm your document details"
+//   //       textHi="कृपया अपने दस्तावेज़ विवरण की पुष्टि करें"
+//   //     />
+
+//   //     <div className="page-content  ">
+//   //       <StepIndicator
+//   //         currentStep={3}
+//   //         totalSteps={4}
+//   //         label="Verify Documents"
+//   //         labelHi="दस्तावेज़ जांचें"
+//   //       />
+
+//   //       <div className="mt-5 space-y-5 ">
+
+//   //         {/* DRIVING LICENSE */}
+//   //         <section className="bg-white shadow-sm rounded-xl border border-green-200 p-5 space-y-4">
+
+//   //           <div className="flex items-center justify-between">
+//   //             <div>
+//   //               <h3 className="text-lg font-semibold text-green-700">
+//   //                 Driving License
+//   //               </h3>
+//   //               <p className="text-xs text-gray-500">
+//   //                 ड्राइविंग लाइसेंस
+//   //               </p>
+//   //             </div>
+
+//   //             <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+//   //               DL
+//   //             </span>
+//   //           </div>
+
+//   //           <div className="grid gap-4">
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Driver Name
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 ड्राइवर का नाम
+//   //               </p>
+
+//   //               <input
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.dl.name}
+//   //                 onChange={(e) => handleChange("dl", "name", e.target.value)}
+//   //                 placeholder="Driver Name / ड्राइवर नाम"
+//   //               />
+//   //             </div>
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 License Number
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 लाइसेंस नंबर
+//   //               </p>
+
+//   //               <input
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.dl.licenseNo}
+//   //                 onChange={(e) => handleChange("dl", "licenseNo", e.target.value.toUpperCase())}
+//   //                 placeholder="License Number / लाइसेंस नंबर"
+//   //               />
+//   //             </div>
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Expiry Date
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 समाप्ति तिथि
+//   //               </p>
+
+//   //               <input
+//   //                 type="date"
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.dl.expiryDate}
+//   //                 onChange={(e) => handleChange("dl", "expiryDate", e.target.value)}
+//   //               />
+//   //             </div>
+
+//   //           </div>
+//   //         </section>
+
+//   //         {/* INSURANCE */}
+//   //         <section className="bg-white shadow-sm rounded-xl border border-blue-200 p-5 space-y-4">
+
+//   //           <div className="flex items-center justify-between">
+//   //             <div>
+//   //               <h3 className="text-lg font-semibold text-blue-700">
+//   //                 Insurance
+//   //               </h3>
+//   //               <p className="text-xs text-gray-500">
+//   //                 बीमा
+//   //               </p>
+//   //             </div>
+
+//   //             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+//   //               INS
+//   //             </span>
+//   //           </div>
+
+//   //           <div className="grid gap-4">
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Policy Number
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 पॉलिसी नंबर
+//   //               </p>
+
+//   //               <input
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.insurance.policyNo}
+//   //                 onChange={(e) => handleChange("insurance", "policyNo", e.target.value)}
+//   //                 placeholder="Policy Number / पॉलिसी नंबर"
+//   //               />
+//   //             </div>
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Expiry Date
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 समाप्ति तिथि
+//   //               </p>
+
+//   //               <input
+//   //                 type="date"
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.insurance.expiryDate}
+//   //                 onChange={(e) => handleChange("insurance", "expiryDate", e.target.value)}
+//   //               />
+//   //             </div>
+
+//   //           </div>
+//   //         </section>
+
+
+
+//   //         {/* RC */}
+//   //         <section className="bg-white shadow-sm rounded-xl border border-purple-200 p-5 space-y-4">
+
+//   //           <div className="flex items-center justify-between">
+//   //             <div>
+//   //               <h3 className="text-lg font-semibold text-purple-700">
+//   //                 Registration Certificate
+//   //               </h3>
+//   //               <p className="text-xs text-gray-500">
+//   //                 आरसी
+//   //               </p>
+//   //             </div>
+
+//   //             <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+//   //               RC
+//   //             </span>
+//   //           </div>
+
+//   //           <div className="grid gap-4">
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Vehicle Number
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 वाहन नंबर
+//   //               </p>
+
+//   //               <input
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.rc.vehicleNo}
+//   //                 onChange={(e) => handleChange("rc", "vehicleNo", e.target.value.toUpperCase())}
+//   //                 placeholder="Vehicle Number / वाहन नंबर"
+//   //               />
+//   //             </div>
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Chassis Number
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 चेसिस नंबर
+//   //               </p>
+
+//   //               <input
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.rc.chassisNo}
+//   //                 onChange={(e) => handleChange("rc", "chassisNo", e.target.value.toUpperCase())}
+//   //                 placeholder="Chassis Number / चेसिस नंबर"
+//   //               />
+//   //             </div>
+
+//   //             <div>
+//   //               <label className="text-xs font-medium text-gray-600">
+//   //                 Expiry Date
+//   //               </label>
+//   //               <p className="text-xs text-gray-400 mb-1">
+//   //                 समाप्ति तिथि
+//   //               </p>
+
+//   //               <input
+//   //                 type="date"
+//   //                 className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //                 value={docs.rc.expiryDate}
+//   //                 onChange={(e) => handleChange("rc", "expiryDate", e.target.value)}
+//   //               />
+//   //             </div>
+
+//   //           </div>
+//   //         </section>
+
+
+
+//   //         {/* FITNESS */}
+//   //         <section className="bg-white shadow-sm rounded-xl border border-orange-200 p-5 space-y-4">
+
+//   //           <div className="flex items-center justify-between">
+//   //             <div>
+//   //               <h3 className="text-lg font-semibold text-orange-700">
+//   //                 Fitness Certificate
+//   //               </h3>
+//   //               <p className="text-xs text-gray-500">
+//   //                 फिटनेस प्रमाण पत्र
+//   //               </p>
+//   //             </div>
+
+//   //             <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
+//   //               FIT
+//   //             </span>
+//   //           </div>
+
+//   //           <div>
+
+//   //             <label className="text-xs font-medium text-gray-600">
+//   //               Expiry Date
+//   //             </label>
+
+//   //             <p className="text-xs text-gray-400 mb-1">
+//   //               समाप्ति तिथि
+//   //             </p>
+
+//   //             <input
+//   //               type="date"
+//   //               className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+//   //               value={docs.fitness.expiryDate}
+//   //               onChange={(e) => handleChange("fitness", "expiryDate", e.target.value)}
+//   //             />
+
+//   //           </div>
+
+//   //         </section>
+
+//   //       </div>
+//   //     </div>
+
+//   //     <div className="page-bottom">
+//   //       <button
+//   //         onClick={handleNext}
+//   //         className="btn-primary-full"
+//   //       >
+//   //         Confirm & Continue / पुष्टि करें
+//   //       </button>
+//   //     </div>
+//   //   </div>
+//   // );
+//   return (
+//     <div className="mobile-container">
+//       <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
+//       <InfoBanner
+//         text="Please confirm your document details"
+//         textHi="कृपया अपने दस्तावेज़ विवरण की पुष्टि करें"
+//       />
+
+//       <div className="page-content">
+//         <StepIndicator
+//           currentStep={3}
+//           totalSteps={4}
+//           label="Verify Documents"
+//           labelHi="दस्तावेज़ जांचें"
+//         />
+
+//         <div className="mt-5 space-y-5">
+
+//           {/* DRIVING LICENSE */}
+//           <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("dl", "green")}`}>
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <h3 className={`text-lg font-semibold ${expiredDocs.dl ? "text-red-600" : "text-green-700"}`}>
+//                   Driving License
+//                 </h3>
+//                 <p className="text-xs text-gray-500">ड्राइविंग लाइसेंस</p>
+//               </div>
+//               <div className="flex flex-col items-end gap-1">
+//                 <span className={`text-xs px-2 py-1 rounded ${expiredDocs.dl ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+//                   DL
+//                 </span>
+//                 {/* ✅ Expired badge */}
+//                 {expiredDocs.dl && (
+//                   <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+//                     Expired / समाप्त
+//                   </span>
+//                 )}
+//               </div>
+//             </div>
+
+//             <div className="grid gap-4">
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Driver Name</label>
+//                 <p className="text-xs text-gray-400 mb-1">ड्राइवर का नाम</p>
+//                 <input
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("dl")}`}
+//                   value={docs.dl.name}
+//                   onChange={(e) => handleChange("dl", "name", e.target.value)}
+//                   placeholder="Driver Name / ड्राइवर नाम"
+//                 />
+//               </div>
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">License Number</label>
+//                 <p className="text-xs text-gray-400 mb-1">लाइसेंस नंबर</p>
+//                 <input
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("dl")}`}
+//                   value={docs.dl.licenseNo}
+//                   onChange={(e) => handleChange("dl", "licenseNo", e.target.value.toUpperCase())}
+//                   placeholder="License Number / लाइसेंस नंबर"
+//                 />
+//               </div>
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+//                 <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
+//                 <input
+//                   type="date"
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("dl")}`}
+//                   value={docs.dl.expiryDate}
+//                   onChange={(e) => handleChange("dl", "expiryDate", e.target.value)}
+//                 />
+//               </div>
+//             </div>
+//           </section>
+
+//           {/* INSURANCE */}
+//           <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("insurance", "blue")}`}>
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <h3 className={`text-lg font-semibold ${expiredDocs.insurance ? "text-red-600" : "text-blue-700"}`}>
+//                   Insurance
+//                 </h3>
+//                 <p className="text-xs text-gray-500">बीमा</p>
+//               </div>
+//               <div className="flex flex-col items-end gap-1">
+//                 <span className={`text-xs px-2 py-1 rounded ${expiredDocs.insurance ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
+//                   INS
+//                 </span>
+//                 {expiredDocs.insurance && (
+//                   <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+//                     Expired / समाप्त
+//                   </span>
+//                 )}
+//               </div>
+//             </div>
+
+//             <div className="grid gap-4">
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Policy Number</label>
+//                 <p className="text-xs text-gray-400 mb-1">पॉलिसी नंबर</p>
+//                 <input
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("insurance")}`}
+//                   value={docs.insurance.policyNo}
+//                   onChange={(e) => handleChange("insurance", "policyNo", e.target.value)}
+//                   placeholder="Policy Number / पॉलिसी नंबर"
+//                 />
+//               </div>
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+//                 <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
+//                 <input
+//                   type="date"
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("insurance")}`}
+//                   value={docs.insurance.expiryDate}
+//                   onChange={(e) => handleChange("insurance", "expiryDate", e.target.value)}
+//                 />
+//               </div>
+//             </div>
+//           </section>
+
+//           {/* RC */}
+//           <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("rc", "purple")}`}>
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <h3 className={`text-lg font-semibold ${expiredDocs.rc ? "text-red-600" : "text-purple-700"}`}>
+//                   Registration Certificate
+//                 </h3>
+//                 <p className="text-xs text-gray-500">आरसी</p>
+//               </div>
+//               <div className="flex flex-col items-end gap-1">
+//                 <span className={`text-xs px-2 py-1 rounded ${expiredDocs.rc ? "bg-red-100 text-red-700" : "bg-purple-100 text-purple-700"}`}>
+//                   RC
+//                 </span>
+//                 {expiredDocs.rc && (
+//                   <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+//                     Expired / समाप्त
+//                   </span>
+//                 )}
+//               </div>
+//             </div>
+
+//             <div className="grid gap-4">
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Vehicle Number</label>
+//                 <p className="text-xs text-gray-400 mb-1">वाहन नंबर</p>
+//                 <input
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("rc")}`}
+//                   value={docs.rc.vehicleNo}
+//                   onChange={(e) => handleChange("rc", "vehicleNo", e.target.value.toUpperCase())}
+//                   placeholder="Vehicle Number / वाहन नंबर"
+//                 />
+//               </div>
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Chassis Number</label>
+//                 <p className="text-xs text-gray-400 mb-1">चेसिस नंबर</p>
+//                 <input
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("rc")}`}
+//                   value={docs.rc.chassisNo}
+//                   onChange={(e) => handleChange("rc", "chassisNo", e.target.value.toUpperCase())}
+//                   placeholder="Chassis Number / चेसिस नंबर"
+//                 />
+//               </div>
+//               <div>
+//                 <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+//                 <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
+//                 <input
+//                   type="date"
+//                   className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("rc")}`}
+//                   value={docs.rc.expiryDate}
+//                   onChange={(e) => handleChange("rc", "expiryDate", e.target.value)}
+//                 />
+//               </div>
+//             </div>
+//           </section>
+
+//           {/* FITNESS */}
+//           <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("fitness", "orange")}`}>
+//             <div className="flex items-center justify-between">
+//               <div>
+//                 <h3 className={`text-lg font-semibold ${expiredDocs.fitness ? "text-red-600" : "text-orange-700"}`}>
+//                   Fitness Certificate
+//                 </h3>
+//                 <p className="text-xs text-gray-500">फिटनेस प्रमाण पत्र</p>
+//               </div>
+//               <div className="flex flex-col items-end gap-1">
+//                 <span className={`text-xs px-2 py-1 rounded ${expiredDocs.fitness ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}`}>
+//                   FIT
+//                 </span>
+//                 {expiredDocs.fitness && (
+//                   <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+//                     Expired / समाप्त
+//                   </span>
+//                 )}
+//               </div>
+//             </div>
+
+//             <div>
+//               <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+//               <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
+//               <input
+//                 type="date"
+//                 className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("fitness")}`}
+//                 value={docs.fitness.expiryDate}
+//                 onChange={(e) => handleChange("fitness", "expiryDate", e.target.value)}
+//               />
+//             </div>
+//           </section>
+
+//         </div>
+//       </div>
+
+//       <div className="page-bottom">
+//         {/* ✅ Button disabled and red when expired docs exist */}
+//         <button
+//           onClick={handleNext}
+//           disabled={hasExpiredDoc}
+//           className={`btn-primary-full ${hasExpiredDoc ? "opacity-50 cursor-not-allowed bg-red-500" : ""}`}
+//         >
+//           {hasExpiredDoc
+//             ? "Documents Expired / दस्तावेज़ समाप्त"
+//             : "Confirm & Continue / पुष्टि करें"}
+//         </button>
+//       </div>
+//     </div>
+//   );
+// };
+
+// export default DocumentReview;
+
+
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import StepIndicator from "@/components/StepIndicator";
 import InfoBanner from "@/components/InfoBanner";
 import usePageAudio from "@/hooks/usePageAudio";
+import { CheckExpiryDate } from "@/Helpers/CheckExpiryDate";
+import { toast } from "sonner";
 
 const emptyState = {
   dl: { name: "", licenseNo: "", expiryDate: "" },
@@ -14,11 +645,10 @@ const emptyState = {
 
 const DocumentReview = () => {
   const navigate = useNavigate();
-
   const [docs, setDocs] = useState(emptyState);
   const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
-
+  // ✅ Load OCR data
   useEffect(() => {
     speak('कृपया अपने डॉक्यूमेंट्स की जांच करें');
     const raw = sessionStorage.getItem("ocrData");
@@ -48,33 +678,77 @@ const DocumentReview = () => {
         expiryDate: parsed?.fitness?.fields?.expiryDate || "",
       },
     });
-  }, [navigate,speak]);
+  }, [navigate, speak]);
+
+  // ✅ Compute expired docs reactively from current docs state
+  const expiredDocs = {
+    dl: docs.dl.expiryDate && !CheckExpiryDate(docs.dl.expiryDate),
+    insurance: docs.insurance.expiryDate && !CheckExpiryDate(docs.insurance.expiryDate),
+    rc: docs.rc.expiryDate && !CheckExpiryDate(docs.rc.expiryDate),
+    fitness: docs.fitness.expiryDate && !CheckExpiryDate(docs.fitness.expiryDate),
+  };
+
+  const hasExpiredDoc = Object.values(expiredDocs).some(Boolean);
+
+  // ✅ Speak when expired docs detected after data loads
+  useEffect(() => {
+    if (hasExpiredDoc) {
+      const expiredNames = [
+        expiredDocs.dl && "Driving License",
+        expiredDocs.insurance && "Insurance",
+        expiredDocs.rc && "RC",
+        expiredDocs.fitness && "Fitness Certificate",
+      ].filter(Boolean).join(", ");
+
+      speak(`यह दस्तावेज़ समाप्त हो गए हैं: ${expiredNames}। कृपया Renew करें।`);
+    }
+  }, [hasExpiredDoc]);
 
   const handleChange = (section, field, value) => {
     setDocs((prev) => ({
       ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value,
-      },
+      [section]: { ...prev[section], [field]: value },
     }));
   };
 
   const handleNext = () => {
+    if (hasExpiredDoc) {
+      const expiredNames = [
+        expiredDocs.dl && "Driving License",
+        expiredDocs.insurance && "Insurance",
+        expiredDocs.rc && "अर्सी",
+        expiredDocs.fitness && "फिटनेस Certificate",
+      ].filter(Boolean).join(", ");
+
+      toast.error(`Expired documents: ${expiredNames}`);
+      speak(`यह दस्तावेज़ समाप्त हो गए हैं: ${expiredNames}। कृपया Renew करें।`);
+      return;
+    }
+
     sessionStorage.setItem("ocrConfirmedData", JSON.stringify(docs));
     navigate("/driver/selfie");
   };
 
-  return (
-    <div className="mobile-container border-green-500">
-      <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
+  // ✅ Helper — border class based on expiry
+  const sectionBorder = (key, defaultColor) =>
+    expiredDocs[key]
+      ? "border-red-500 bg-red-50"
+      : `border-${defaultColor}-200 bg-white`;
 
+  const inputBorder = (key) =>
+    expiredDocs[key]
+      ? "border-red-400 bg-red-50"
+      : "border-default-medium bg-neutral-secondary-medium";
+
+  return (
+    <div className="mobile-container">
+      <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
       <InfoBanner
         text="Please confirm your document details"
         textHi="कृपया अपने दस्तावेज़ विवरण की पुष्टि करें"
-      /> 
+      />
 
-      <div className="page-content  ">
+      <div className="page-content">
         <StepIndicator
           currentStep={3}
           totalSteps={4}
@@ -82,248 +756,194 @@ const DocumentReview = () => {
           labelHi="दस्तावेज़ जांचें"
         />
 
-        <div className="mt-5 space-y-5 ">
+        <div className="mt-5 space-y-5">
 
           {/* DRIVING LICENSE */}
-          <section className="bg-white shadow-sm rounded-xl border border-green-200 p-5 space-y-4">
-
+          <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("dl", "green")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-green-700">
+                <h3 className={`text-lg font-semibold ${expiredDocs.dl ? "text-red-600" : "text-green-700"}`}>
                   Driving License
                 </h3>
-                <p className="text-xs text-gray-500">
-                  ड्राइविंग लाइसेंस
-                </p>
+                <p className="text-xs text-gray-500">ड्राइविंग लाइसेंस</p>
               </div>
-
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                DL
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-xs px-2 py-1 rounded ${expiredDocs.dl ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
+                  DL
+                </span>
+                {expiredDocs.dl && (
+                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+                    Expired / समाप्त
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-4">
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Driver Name
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  ड्राइवर का नाम
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Driver Name</label>
+                <p className="text-xs text-gray-400 mb-1">ड्राइवर का नाम</p>
                 <input
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("dl")}`}
                   value={docs.dl.name}
                   onChange={(e) => handleChange("dl", "name", e.target.value)}
                   placeholder="Driver Name / ड्राइवर नाम"
                 />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  License Number
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  लाइसेंस नंबर
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">License Number</label>
+                <p className="text-xs text-gray-400 mb-1">लाइसेंस नंबर</p>
                 <input
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("dl")}`}
                   value={docs.dl.licenseNo}
                   onChange={(e) => handleChange("dl", "licenseNo", e.target.value.toUpperCase())}
                   placeholder="License Number / लाइसेंस नंबर"
                 />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Expiry Date
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  समाप्ति तिथि
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+                <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
                 <input
                   type="date"
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("dl")}`}
                   value={docs.dl.expiryDate}
                   onChange={(e) => handleChange("dl", "expiryDate", e.target.value)}
                 />
               </div>
-
             </div>
           </section>
 
-
-
           {/* INSURANCE */}
-          <section className="bg-white shadow-sm rounded-xl border border-blue-200 p-5 space-y-4">
-
+          <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("insurance", "blue")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-blue-700">
+                <h3 className={`text-lg font-semibold ${expiredDocs.insurance ? "text-red-600" : "text-blue-700"}`}>
                   Insurance
                 </h3>
-                <p className="text-xs text-gray-500">
-                  बीमा
-                </p>
+                <p className="text-xs text-gray-500">बीमा</p>
               </div>
-
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                INS
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-xs px-2 py-1 rounded ${expiredDocs.insurance ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}>
+                  INS
+                </span>
+                {expiredDocs.insurance && (
+                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+                    Expired / समाप्त
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-4">
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Policy Number
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  पॉलिसी नंबर
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Policy Number</label>
+                <p className="text-xs text-gray-400 mb-1">पॉलिसी नंबर</p>
                 <input
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("insurance")}`}
                   value={docs.insurance.policyNo}
                   onChange={(e) => handleChange("insurance", "policyNo", e.target.value)}
                   placeholder="Policy Number / पॉलिसी नंबर"
                 />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Expiry Date
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  समाप्ति तिथि
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+                <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
                 <input
                   type="date"
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("insurance")}`}
                   value={docs.insurance.expiryDate}
                   onChange={(e) => handleChange("insurance", "expiryDate", e.target.value)}
                 />
               </div>
-
             </div>
           </section>
 
-
-
           {/* RC */}
-          <section className="bg-white shadow-sm rounded-xl border border-purple-200 p-5 space-y-4">
-
+          <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("rc", "purple")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-purple-700">
+                <h3 className={`text-lg font-semibold ${expiredDocs.rc ? "text-red-600" : "text-purple-700"}`}>
                   Registration Certificate
                 </h3>
-                <p className="text-xs text-gray-500">
-                  आरसी
-                </p>
+                <p className="text-xs text-gray-500">आरसी</p>
               </div>
-
-              <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                RC
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-xs px-2 py-1 rounded ${expiredDocs.rc ? "bg-red-100 text-red-700" : "bg-purple-100 text-purple-700"}`}>
+                  RC
+                </span>
+                {expiredDocs.rc && (
+                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+                    Expired / समाप्त
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-4">
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Vehicle Number
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  वाहन नंबर
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Vehicle Number</label>
+                <p className="text-xs text-gray-400 mb-1">वाहन नंबर</p>
                 <input
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("rc")}`}
                   value={docs.rc.vehicleNo}
                   onChange={(e) => handleChange("rc", "vehicleNo", e.target.value.toUpperCase())}
                   placeholder="Vehicle Number / वाहन नंबर"
                 />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Chassis Number
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  चेसिस नंबर
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Chassis Number</label>
+                <p className="text-xs text-gray-400 mb-1">चेसिस नंबर</p>
                 <input
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("rc")}`}
                   value={docs.rc.chassisNo}
                   onChange={(e) => handleChange("rc", "chassisNo", e.target.value.toUpperCase())}
                   placeholder="Chassis Number / चेसिस नंबर"
                 />
               </div>
-
               <div>
-                <label className="text-xs font-medium text-gray-600">
-                  Expiry Date
-                </label>
-                <p className="text-xs text-gray-400 mb-1">
-                  समाप्ति तिथि
-                </p>
-
+                <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+                <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
                 <input
                   type="date"
-                  className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                  className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("rc")}`}
                   value={docs.rc.expiryDate}
                   onChange={(e) => handleChange("rc", "expiryDate", e.target.value)}
                 />
               </div>
-
             </div>
           </section>
 
-
-
           {/* FITNESS */}
-          <section className="bg-white shadow-sm rounded-xl border border-orange-200 p-5 space-y-4">
-
+          <section className={`shadow-sm rounded-xl border p-5 space-y-4 ${sectionBorder("fitness", "orange")}`}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-orange-700">
+                <h3 className={`text-lg font-semibold ${expiredDocs.fitness ? "text-red-600" : "text-orange-700"}`}>
                   Fitness Certificate
                 </h3>
-                <p className="text-xs text-gray-500">
-                  फिटनेस प्रमाण पत्र
-                </p>
+                <p className="text-xs text-gray-500">फिटनेस प्रमाण पत्र</p>
               </div>
-
-              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-                FIT
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={`text-xs px-2 py-1 rounded ${expiredDocs.fitness ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}`}>
+                  FIT
+                </span>
+                {expiredDocs.fitness && (
+                  <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded">
+                    Expired / समाप्त
+                  </span>
+                )}
+              </div>
             </div>
 
             <div>
-
-              <label className="text-xs font-medium text-gray-600">
-                Expiry Date
-              </label>
-
-              <p className="text-xs text-gray-400 mb-1">
-                समाप्ति तिथि
-              </p>
-
+              <label className="text-xs font-medium text-gray-600">Expiry Date</label>
+              <p className="text-xs text-gray-400 mb-1">समाप्ति तिथि</p>
               <input
                 type="date"
-                className="bg-neutral-secondary-medium border border-default-medium text-heading text-sm rounded-base focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs rounded"
+                className={`text-heading text-sm rounded focus:ring-brand focus:border-brand block w-full px-3 py-2.5 shadow-xs border ${inputBorder("fitness")}`}
                 value={docs.fitness.expiryDate}
                 onChange={(e) => handleChange("fitness", "expiryDate", e.target.value)}
               />
-
             </div>
-
           </section>
 
         </div>
@@ -332,9 +952,12 @@ const DocumentReview = () => {
       <div className="page-bottom">
         <button
           onClick={handleNext}
-          className="btn-primary-full"
+          disabled={hasExpiredDoc}
+          className={`btn-primary-full ${hasExpiredDoc ? "opacity-50 cursor-not-allowed bg-red-500" : ""}`}
         >
-          Confirm & Continue / पुष्टि करें
+          {hasExpiredDoc
+            ? "Documents Expired / दस्तावेज़ समाप्त"
+            : "Confirm & Continue / पुष्टि करें"}
         </button>
       </div>
     </div>
@@ -342,4 +965,3 @@ const DocumentReview = () => {
 };
 
 export default DocumentReview;
-

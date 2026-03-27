@@ -25,7 +25,7 @@ const DriverDetails = () => {
     useEffect(() => {
         const welcomeText = " namashkaarr !! कास्ता  में आपका स्वागत है कृपया अपना विवरण दर्ज करें";
         speak(welcomeText);
-    }, [speak]);
+    }, [speak, toggleAudio]);
 
     /* ========================= */
     /* AUDIO AFTER DO VALIDATED */
@@ -34,7 +34,7 @@ const DriverDetails = () => {
     useEffect(() => {
         const instructionText = "namashkaarr !! कास्ता  में आपका स्वागत है कृपया अपना विवरण दर्ज करें";
         speak(instructionText);
-    }, [doValidated]);
+    }, [doValidated, doValue]);
 
     /* ========================= */
     /* HANDLERS */

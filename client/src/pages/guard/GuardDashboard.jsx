@@ -242,7 +242,8 @@ export default function GuardDashboard() {
                 status: mapStatus(item.Status),
                 entryTime: item.ReportIn_Time ?? item.Entry_Time,
                 documents: item.Documents,
-                Token: item.Token
+                Token: item.Token,
+                Zgp: item.Zgp,
             }));
 
             setVehicles(formatted);
@@ -475,7 +476,7 @@ export default function GuardDashboard() {
                             {[
                                 { label: "Token", value: `#${selectedVehicle.Token}` },
                                 { label: "DO Number", value: selectedVehicle.doNumber },
-                                { label: "RFID", value: selectedVehicle.rfid },
+                                { label: "ZGP", value: selectedVehicle.Zgp },
                                 { label: "Status", value: selectedVehicle.status },
                                 ...(selectedVehicle.entryTime
                                     ? [
