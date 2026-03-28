@@ -98,11 +98,54 @@ const DocumentUpload = () => {
     /* ========================= */
     /* HANDLE FILE */
     /* ========================= */
+    // const handleFileSelect = (file) => {
+
+    //     if (!file || !currentDocKey) return;
+
+    //     const allowedTypes = [
+    //         "image/jpeg",
+    //         ".heic",
+    //         "image/jpg",
+    //         "image/png",
+    //         "image/webp",
+    //         "image/avif",
+    //         "image/bmp",
+    //         "image/tiff",
+    //         "image/heic",
+    //         "image/heif",
+    //         "application/pdf",
+    //         "application/octet-stream"
+    //     ];
+
+    //     if (!allowedTypes.includes(file.type)) {
+    //         toast.error("Only images or PDF allowed!!!!!");
+    //         return;
+    //     }
+
+    //     setShowPicker(null);
+
+    //     const preview =
+    //         file.type.startsWith("image/")
+    //             ? URL.createObjectURL(file)
+    //             : null;
+
+    //     setDocs(prev => ({
+    //         ...prev,
+    //         [currentDocKey]: {
+    //             preview,
+    //             progress: 0,
+    //             uploading: false,
+    //             uploaded: false,
+    //             file
+    //         }
+    //     }));
+    // };
+
     const handleFileSelect = (file) => {
 
         if (!file || !currentDocKey) return;
 
-        const allowedTypes = [
+        const allowedMimeTypes = [
             "image/jpeg",
             "image/jpg",
             "image/png",
@@ -113,31 +156,46 @@ const DocumentUpload = () => {
             "image/heic",
             "image/heif",
             "application/pdf",
-            "application/octet-stream"
+            "application/octet-stream" // fallback
         ];
 
-        if (!allowedTypes.includes(file.type)) {
+        const allowedExtensions = [
+            ".jpg", ".jpeg", ".png", ".webp", ".avif",
+            ".bmp", ".tiff",
+            ".heic", ".heif",
+            ".pdf"
+        ];
+
+        const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+        // ✅ FIX: handle HEIC (empty type case)
+        if (
+            (!file.type && allowedExtensions.includes(ext)) ||
+            (allowedMimeTypes.includes(file.type) && allowedExtensions.includes(ext))
+        ) {
+
+            setShowPicker(null);
+
+            const preview =
+                file.type.startsWith("image/") && ext !== ".heic" && ext !== ".heif"
+                    ? URL.createObjectURL(file)
+                    : null; // ❌ HEIC preview not supported
+
+            setDocs(prev => ({
+                ...prev,
+                [currentDocKey]: {
+                    preview,
+                    progress: 0,
+                    uploading: false,
+                    uploaded: false,
+                    file
+                }
+            }));
+
+        } else {
             toast.error("Only images or PDF allowed");
             return;
         }
-
-        setShowPicker(null);
-
-        const preview =
-            file.type.startsWith("image/")
-                ? URL.createObjectURL(file)
-                : null;
-
-        setDocs(prev => ({
-            ...prev,
-            [currentDocKey]: {
-                preview,
-                progress: 0,
-                uploading: false,
-                uploaded: false,
-                file
-            }
-        }));
     };
     const uploadAllDocuments = async () => {
 
@@ -219,10 +277,10 @@ const DocumentUpload = () => {
             console.error(error);
 
             toast.error(
-                error.response?.data?.message || "Document upload failed"
+                error.res?.data?.message || "Document upload failed"
             );
 
-            speak(error.response?.data?.message || "Upload failed");
+            speak(error.res?.data?.message || "Upload failed");
 
         }
         finally {

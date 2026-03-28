@@ -72,6 +72,7 @@
 
 import multer from "multer";
 import fs from "fs";
+import path from "path";
 
 const uploadDir = "uploads";
 
@@ -109,10 +110,13 @@ const fileFilter = (req, file, cb) => {
         ".heic", ".heif",
         ".pdf"
     ];
+    const ext = path.extname(file.originalname).toLowerCase();
+    // ✅ HEIC from iOS comes as application/octet-stream — check extension too
+    const isAllowedType = allowedTypes.includes(file.mimetype);
+    const isAllowedExt = allowedExtensions.includes(ext);
 
     if (
-        allowedTypes.includes(file.mimetype) &&
-        allowedExtensions.includes(ext)
+        isAllowedType || isAllowedExt
     ) {
         cb(null, true);
     } else {
