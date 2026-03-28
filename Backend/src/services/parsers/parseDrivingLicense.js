@@ -3,29 +3,7 @@ import findMatch from "./findMatch.js";
 import normalizeText from "./normalizeText.js";
 import regexPatterns from "./regexPatterns.js";
 
-// const parseDrivingLicense= (lines) => {
 
-//     const normalized = normalizeText(lines);
-//     const text = normalized.join(" ");
-
-//     const licenseNo = findMatch(text, regexPatterns.dlNumber);
-
-//     const dates = [...text.matchAll(regexPatterns.date)].map(d => d[0]);
-
-//     const nameLine =
-//         normalized.find(l => l.includes("NAME")) ||
-//         normalized.find(l =>
-//             /^[A-Z\s]{5,}$/.test(l) &&
-//             !l.includes("LICENCE") &&
-//             !l.includes("INDIA")
-//         );
-
-//     return {
-//         name: nameLine ? nameLine.replace(/NAME[:\-]*/, "").trim() : null,
-//         licenseNo,
-//         expiryDate: dates[1] || dates[0] || null
-//     };
-// };
 const parseDrivingLicense = (lines) => {
 
     const normalized = normalizeText(lines);
@@ -37,18 +15,42 @@ const parseDrivingLicense = (lines) => {
 
     /* DL NUMBER */
 
-    const dlMatch = text.match(/\b[A-Z]{2}\d{2}\s?\d{4,12}\b/);
+    // const dlMatch = text.match(/\b[A-Z]{2}\d{2}\s?\d{4,12}\b/);
 
-    if (dlMatch) {
-        licenseNo = dlMatch[0].replace(/\s+/g, "");
+    // if (dlMatch) {
+    //     licenseNo = dlMatch[0].replace(/\s+/g, "");
+    // }
+    /* DL NUMBER */
+
+    const dlRegexPatterns = [
+        /\b[A-Z]{2}\d{2}[A-Z][-\s]?\d{4}[-\s]?\d{6,8}\b/, // new format FIRST
+        /\b[A-Z]{2}\d{2}\s?\d{4,12}\b/                   // old format
+    ];
+
+    for (const regex of dlRegexPatterns) {
+        const match = text.match(regex);
+        if (match) {
+            licenseNo = match[0]
+                .replace(/\s+/g, "")
+                .replace(/-/g, "-");
+            break;
+        }
     }
 
     /* NAME */
 
     for (let i = 0; i < normalized.length; i++) {
-
-        if (normalized[i].includes("NAME") && normalized[i + 1]) {
-            name = normalized[i + 1].trim();
+        //his can fail if OCR gives: NAME: AAMEEN
+        // if (normalized[i].includes("NAME") && normalized[i + 1]) {
+        //     name = normalized[i + 1].trim();
+        // }
+        if (normalized[i].includes("NAME")) {
+            const possibleName = normalized[i].split("NAME").pop().trim();
+            if (possibleName) {
+                name = possibleName;
+            } else if (normalized[i + 1]) {
+                name = normalized[i + 1].trim();
+            }
         }
     }
 
