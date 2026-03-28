@@ -94,13 +94,29 @@ const fileFilter = (req, file, cb) => {
         "image/jpeg",
         "image/jpg",
         "image/png",
-        "application/pdf"
+        "image/webp",
+        "image/avif",
+        "image/bmp",
+        "image/tiff",
+        "image/heic",
+        "image/heif",
+        "application/pdf",
+        "application/octet-stream"
+    ];
+    const allowedExtensions = [
+        ".jpg", ".jpeg", ".png", ".webp", ".avif",
+        ".gif", ".bmp", ".tiff",
+        ".heic", ".heif",
+        ".pdf"
     ];
 
-    if (allowedTypes.includes(file.mimetype)) {
+    if (
+        allowedTypes.includes(file.mimetype) &&
+        allowedExtensions.includes(ext)
+    ) {
         cb(null, true);
     } else {
-        cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", "Only images and PDFs allowed"));
+        cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", "Unsupported file format"));
     }
 };
 
