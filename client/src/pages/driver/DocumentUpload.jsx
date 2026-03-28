@@ -104,9 +104,16 @@ const DocumentUpload = () => {
 
         const allowedTypes = [
             "image/jpeg",
-            "image/png",
             "image/jpg",
-            "application/pdf"
+            "image/png",
+            "image/webp",
+            "image/avif",
+            "image/bmp",
+            "image/tiff",
+            "image/heic",
+            "image/heif",
+            "application/pdf",
+            "application/octet-stream"
         ];
 
         if (!allowedTypes.includes(file.type)) {
