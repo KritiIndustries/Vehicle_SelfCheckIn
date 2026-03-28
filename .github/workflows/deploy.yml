@@ -27,10 +27,10 @@ jobs:
             # Backend - install dependencies & restart
             cd ~/Vehicle_SelfCheckIn/Backend
             npm install
-            pm2 restart vehicle-backend
+            pm2 restart vehicle-app
 
             # Frontend - install, build & restart nginx
             cd ~/Vehicle_SelfCheckIn/client
             npm install
             npm run build
-            sudo systemctl restart nginx
+            sudo systemctl reload nginx

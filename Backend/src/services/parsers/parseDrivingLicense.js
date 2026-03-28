@@ -41,17 +41,17 @@ const parseDrivingLicense = (lines) => {
 
     for (let i = 0; i < normalized.length; i++) {
         //his can fail if OCR gives: NAME: AAMEEN
-        // if (normalized[i].includes("NAME") && normalized[i + 1]) {
-        //     name = normalized[i + 1].trim();
-        // }
-        if (normalized[i].includes("NAME")) {
-            const possibleName = normalized[i].split("NAME").pop().trim();
-            if (possibleName) {
-                name = possibleName;
-            } else if (normalized[i + 1]) {
-                name = normalized[i + 1].trim();
-            }
+        if (normalized[i].includes("NAME") && normalized[i + 1]) {
+            name = normalized[i + 1].trim();
         }
+        // if (normalized[i].includes("NAME")) {
+        //     const possibleName = normalized[i].split("NAME").pop().trim();
+        //     if (possibleName) {
+        //         name = possibleName;
+        //     } else if (normalized[i + 1]) {
+        //         name = normalized[i + 1].trim();
+        //     }
+        // }
     }
 
     /* VALIDITY TR (Transport expiry) */
