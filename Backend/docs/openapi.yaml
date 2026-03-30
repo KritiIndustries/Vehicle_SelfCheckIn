@@ -1,0 +1,381 @@
+openapi: 3.0.3
+info:
+  title: Vehicle SelfCheckIn API
+  version: "1.0.0"
+  description: OpenAPI spec for core backend endpoints (guard, driver, auth, weighbridge)
+servers:
+  - url: https://kvrs.kritiindia.com/api
+    variables:
+      host:
+        default: https://kvrs.kritiindia.com
+        description: Replace with production host
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    basicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        data:
+          type: object
+        message:
+          type: string
+        success:
+          type: boolean
+        count:
+          type: integer
+    SendOtpRequest:
+      type: object
+      required: [phone]
+      properties:
+        phone:
+          type: string
+          example: "9876543210"
+    VerifyOtpRequest:
+      type: object
+      required: [phone, otp]
+      properties:
+        phone:
+          type: string
+        otp:
+          type: string
+          example: "1234"
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT token
+    Document:
+      type: object
+      properties:
+        Id:
+          type: integer
+        Doc_Type:
+          type: string
+        Verified:
+          type: boolean
+        Image_Path:
+          type: string
+        Verified_By:
+          type: integer
+        Created_At:
+          type: string
+          format: date-time
+    Checkin:
+      type: object
+      properties:
+        Id:
+          type: integer
+        Do_No:
+          type: string
+        Vehicle_No:
+          type: string
+        Driver_Name:
+          type: string
+        Mobile:
+          type: string
+        Token:
+          type: integer
+        Status:
+          type: string
+        Zgp:
+          type: string
+        Documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Document"
+    UploadDocumentsResponse:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              url:
+                type: string
+        ocr:
+          type: object
+    FinalizeRequest:
+      type: object
+      required: [sessionId, doNo, vehicleNo, driverName, mobile]
+      properties:
+        sessionId:
+          type: string
+        doNo:
+          type: string
+        vehicleNo:
+          type: string
+        driverName:
+          type: string
+        mobile:
+          type: string
+        lrNumber:
+          type: string
+        documentDetails:
+          type: object
+          properties:
+            dl:
+              type: object
+            rc:
+              type: object
+            insurance:
+              type: object
+            fitness:
+              type: object
+    FinalizeResponse:
+      type: object
+      properties:
+        checkin:
+          $ref: "#/components/schemas/Checkin"
+    ApiError:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        data:
+          type: "null"
+        message:
+          type: string
+        success:
+          type: boolean
+        errors:
+          type: array
+          items: {}
+paths:
+  /auth/send-otp:
+    post:
+      summary: Send OTP to guard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendOtpRequest"
+      responses:
+        "200":
+          description: OTP sent or guard not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /auth/verify-otp:
+    post:
+      summary: Verify OTP and return JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyOtpRequest"
+      responses:
+        "200":
+          description: Token returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                  data:
+                    $ref: "#/components/schemas/TokenResponse"
+                  message:
+                    type: string
+                  success:
+                    type: boolean
+  /driver/upload-doc:
+    post:
+      summary: Upload driver documents (multipart)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                doNumber:
+                  type: string
+                types:
+                  type: string
+                documents:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        "200":
+          description: Uploaded files
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadDocumentsResponse"
+  /driver/upload-selfie:
+    post:
+      summary: Upload selfie and validate vehicle number
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                sessionId:
+                  type: string
+                doNumber:
+                  type: string
+                vehicleNo:
+                  type: string
+                selfie:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Selfie processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: integer
+                  data:
+                    type: object
+                    properties:
+                      fileUrl:
+                        type: string
+                      detectedVehicleNo:
+                        type: string
+                  message:
+                    type: string
+                  success:
+                    type: boolean
+  /driver/finalize:
+    post:
+      summary: Finalize check-in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalizeRequest"
+      responses:
+        "201":
+          description: Check-in created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinalizeResponse"
+  /driver/validatePage/{do}:
+    get:
+      summary: Validate DO page
+      parameters:
+        - name: do
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Entry found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /guard/getCheckedinDetails:
+    get:
+      summary: Get checked-in details
+      responses:
+        "200":
+          description: List of checkins
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /guard/approve/{id}:
+    patch:
+      summary: Approve entry (requires JWT)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /guard/checkout/{id}:
+    patch:
+      summary: Checkout vehicle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Checked out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"
+  /guard/image/{folder}/{subfolder}/{filename}:
+    get:
+      summary: Proxy S3 image
+      parameters:
+        - name: folder
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: subfolder
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Image stream or redirect
+  /weighbridge:
+    post:
+      summary: Create/update weighbridge entry (basic auth)
+      security:
+        - basicAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Weighbridge processed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiResponse"

@@ -1,0 +1,149 @@
+{
+  "info": {
+    "name": "Vehicle SelfCheckIn API",
+    "_postman_id": "vehicle-selfcheckin-collection",
+    "description": "Postman collection generated from OpenAPI spec",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Send OTP",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"9876543210\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/send-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "send-otp"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Verify OTP",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"9876543210\",\n  \"otp\": \"1234\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth/verify-otp",
+          "host": ["{{baseUrl}}"],
+          "path": ["auth", "verify-otp"]
+        }
+      }
+    },
+    {
+      "name": "Driver - Upload Docs",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "sessionId", "value": "s1", "type": "text" },
+            { "key": "doNumber", "value": "DO1", "type": "text" },
+            { "key": "types", "value": "[\"dl\",\"rc\"]", "type": "text" },
+            { "key": "documents", "type": "file" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/driver/upload-doc",
+          "host": ["{{baseUrl}}"],
+          "path": ["driver", "upload-doc"]
+        }
+      }
+    },
+    {
+      "name": "Driver - Upload Selfie",
+      "request": {
+        "method": "POST",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "sessionId", "value": "s1", "type": "text" },
+            { "key": "doNumber", "value": "DO1", "type": "text" },
+            { "key": "vehicleNo", "value": "MH12AA0001", "type": "text" },
+            { "key": "selfie", "type": "file" }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/driver/upload-selfie",
+          "host": ["{{baseUrl}}"],
+          "path": ["driver", "upload-selfie"]
+        }
+      }
+    },
+    {
+      "name": "Driver - Finalize",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"s1\",\n  \"doNo\": \"DO1\",\n  \"vehicleNo\": \"MH12AA0001\",\n  \"driverName\": \"Ramesh\",\n  \"mobile\": \"9876543210\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/driver/finalize",
+          "host": ["{{baseUrl}}"],
+          "path": ["driver", "finalize"]
+        }
+      }
+    },
+    {
+      "name": "Guard - Get Checkedin Details",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/guard/getCheckedinDetails",
+          "host": ["{{baseUrl}}"],
+          "path": ["guard", "getCheckedinDetails"]
+        }
+      }
+    },
+    {
+      "name": "Guard - Approve",
+      "request": {
+        "method": "PATCH",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": {
+          "raw": "{{baseUrl}}/guard/approve/:id",
+          "host": ["{{baseUrl}}"],
+          "path": ["guard", "approve", ":id"]
+        }
+      }
+    },
+    {
+      "name": "Weighbridge - Post",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "auth": {
+          "type": "basic",
+          "basic": [
+            { "key": "username", "value": "prdadmin" },
+            { "key": "password", "value": "kriti@555" }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"vehicleNo\": \"MH12AA0001\",\n  \"tagNo\": \"TAG123\",\n  \"transporter\": \"ABC\",\n  \"gatePassNo\": \"GP123\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/weighbridge",
+          "host": ["{{baseUrl}}"],
+          "path": ["weighbridge"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "token", "value": "" }
+  ]
+}
