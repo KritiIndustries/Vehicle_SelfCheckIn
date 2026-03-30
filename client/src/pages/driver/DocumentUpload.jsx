@@ -197,97 +197,281 @@ const DocumentUpload = () => {
             return;
         }
     };
-    const uploadAllDocuments = async () => {
+    // const uploadAllDocuments = async () => {
 
+    //     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
+
+    //     const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
+
+    //     if (missingDocs.length) {
+    //         toast.error("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
+    //         speak("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
+    //         return;
+    //     }
+
+    //     const formData = new FormData();
+
+    //     formData.append("sessionId", sessionId);
+    //     formData.append("doNumber", driverDetails?.doNumber);
+
+    //     const types = [];
+
+    //     requiredDocs.forEach((key) => {
+
+    //         const file = docs[key].file;
+
+    //         formData.append("documents", file);
+    //         types.push(key);
+
+    //     });
+
+    //     formData.append("types", JSON.stringify(types));
+
+    //     try {
+    //         setloading(true);
+
+    //         const res = await axios.post(
+    //             `${API}/api/driver/upload-docs`,
+    //             formData,
+    //             {
+    //                 headers: {
+    //                     "Content-Type": "multipart/form-data"
+    //                 },
+    //                 onUploadProgress: (progressEvent) => {
+
+    //                     const percent = Math.round(
+    //                         (progressEvent.loaded * 100) / progressEvent.total
+    //                     );
+
+    //                     setDocs(prev => {
+    //                         const updated = { ...prev };
+
+    //                         requiredDocs.forEach(k => {
+    //                             if (updated[k]) {
+    //                                 updated[k].progress = percent;
+    //                                 updated[k].uploading = percent < 100;
+    //                                 updated[k].uploaded = percent === 100;
+    //                             }
+    //                         });
+
+    //                         return updated;
+    //                     });
+
+    //                 }
+    //             }
+    //         );
+
+    //         const ocr = res.data?.data?.ocr;
+
+    //         if (ocr) {
+    //             sessionStorage.setItem("ocrData", JSON.stringify(ocr));
+    //         }
+
+    //         toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+    //         speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+
+    //         navigate("/driver/doc-review");
+
+    //     } catch (error) {
+
+    //         console.error(error);
+
+    //         toast.error(
+    //             error.res?.data?.message || "Document upload failed"
+    //         );
+
+    //         speak(error.res?.data?.message || "Upload failed");
+
+    //     }
+    //     finally {
+    //         setloading(false);
+    //     }
+
+    // };
+
+
+
+
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    const uploadAllDocuments = async () => {
         const requiredDocs = ["dl", "rc", "insurance", "fitness"];
 
+        // ✅ Validate all docs selected
         const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
-
         if (missingDocs.length) {
-            toast.error("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
-            speak("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
+            const missingLabels = missingDocs.map(d =>
+                docTypes.find(dt => dt.key === d)?.label || d
+            ).join(", ");
+            toast.error(`कृपया यह दस्तावेज़ अपलोड करें: ${missingLabels}`);
+            speak(`कृपया यह दस्तावेज़ अपलोड करें: ${missingLabels}`);
+            return;
+        }
+
+        // ✅ Validate each file size (5MB max per file)
+        const oversizedDocs = requiredDocs.filter(d => docs[d]?.file?.size > 5 * 1024 * 1024);
+        if (oversizedDocs.length) {
+            const labels = oversizedDocs.map(d =>
+                docTypes.find(dt => dt.key === d)?.label || d
+            ).join(", ");
+            toast.error(`File too large (max 5MB): ${labels}`);
+            speak(`यह फ़ाइल बहुत बड़ी है: ${labels}`);
             return;
         }
 
         const formData = new FormData();
-
         formData.append("sessionId", sessionId);
         formData.append("doNumber", driverDetails?.doNumber);
 
         const types = [];
-
         requiredDocs.forEach((key) => {
-
-            const file = docs[key].file;
-
-            formData.append("documents", file);
+            formData.append("documents", docs[key].file);
             types.push(key);
-
         });
-
         formData.append("types", JSON.stringify(types));
+
+        // ✅ Reset progress for all docs
+        setDocs(prev => {
+            const updated = { ...prev };
+            requiredDocs.forEach(k => {
+                if (updated[k]) {
+                    updated[k].progress = 0;
+                    updated[k].uploading = true;
+                    updated[k].uploaded = false;
+                }
+            });
+            return updated;
+        });
 
         try {
             setloading(true);
 
-            const res = await axios.post(
-                `${API}/api/driver/upload-docs`,
-                formData,
-                {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    },
-                    onUploadProgress: (progressEvent) => {
+            let lastError = null;
+            let res = null;
 
-                        const percent = Math.round(
-                            (progressEvent.loaded * 100) / progressEvent.total
-                        );
+            // ✅ Retry logic
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    res = await axios.post(
+                        `${API}/api/driver/upload-docs`,
+                        formData,
+                        {
+                            headers: { "Content-Type": "multipart/form-data" },
+                            timeout: 60000, // ✅ 60 seconds for 4 docs
+                            onUploadProgress: (progressEvent) => {
+                                const percent = Math.round(
+                                    (progressEvent.loaded * 100) / progressEvent.total
+                                );
+                                setDocs(prev => {
+                                    const updated = { ...prev };
+                                    requiredDocs.forEach(k => {
+                                        if (updated[k]) {
+                                            updated[k].progress = percent;
+                                            updated[k].uploading = percent < 100;
+                                            updated[k].uploaded = percent === 100;
+                                        }
+                                    });
+                                    return updated;
+                                });
+                            }
+                        }
+                    );
 
+                    break; // ✅ success — exit retry loop
+
+                } catch (err) {
+                    lastError = err;
+
+                    const status = err.response?.status;
+
+                    // ✅ Don't retry on client errors (4xx)
+                    if (status && status >= 400 && status < 500) {
+                        throw err;
+                    }
+
+                    // ✅ Retry on network/server errors
+                    if (attempt < MAX_RETRIES) {
+                        toast.warning(`Upload failed, retrying... (${attempt}/${MAX_RETRIES})`);
+
+                        // Reset progress on retry
                         setDocs(prev => {
                             const updated = { ...prev };
-
                             requiredDocs.forEach(k => {
                                 if (updated[k]) {
-                                    updated[k].progress = percent;
-                                    updated[k].uploading = percent < 100;
-                                    updated[k].uploaded = percent === 100;
+                                    updated[k].progress = 0;
                                 }
                             });
-
                             return updated;
                         });
 
+                        await sleep(RETRY_DELAY * attempt); // exponential backoff
                     }
                 }
-            );
-
-            const ocr = res.data?.data?.ocr;
-
-            if (ocr) {
-                sessionStorage.setItem("ocrData", JSON.stringify(ocr));
             }
 
-            toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+            if (!res) throw lastError;
+
+            // ✅ Store OCR data
+            const ocr = res.data?.data?.ocr;
+            if (ocr) {
+                sessionStorage.setItem("ocrData", JSON.stringify(ocr));
+            } else {
+                console.warn("No OCR data received");
+            }
+
+            toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं");
             speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
 
             navigate("/driver/doc-review");
 
         } catch (error) {
+            console.error("Upload error:", error);
 
-            console.error(error);
+            // ✅ Reset all doc upload states on failure
+            setDocs(prev => {
+                const updated = { ...prev };
+                requiredDocs.forEach(k => {
+                    if (updated[k]) {
+                        updated[k].progress = 0;
+                        updated[k].uploading = false;
+                        updated[k].uploaded = false;
+                    }
+                });
+                return updated;
+            });
 
-            toast.error(
-                error.res?.data?.message || "Document upload failed"
-            );
+            // ✅ Specific error messages
+            let message = "Document upload failed";
 
-            speak(error.res?.data?.message || "Upload failed");
+            if (error.code === "ECONNABORTED") {
+                message = "Upload timed out — please try again";
+                speak("अपलोड में बहुत समय लग रहा है। कृपया दोबारा कोशिश करें।");
+            } else if (error.code === "ERR_NETWORK") {
+                message = "Network error — please check your connection";
+                speak("नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।");
+            } else if (error.response?.status === 413) {
+                message = "Files too large — please use smaller images";
+                speak("फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।");
+            } else if (error.response?.status === 401) {
+                message = "Session expired — please restart";
+                speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
+            } else if (error.response?.status === 400) {
+                message = error.response?.data?.message || "Invalid request";
+                speak(message);
+            } else {
+                message = error.response?.data?.message || message;
+                speak(message);
+            }
 
-        }
-        finally {
+            toast.error(message);
+
+        } finally {
             setloading(false);
         }
-
     };
+
     const handleOCRComplete = (ocrData) => {
         // Store extracted data
         setExtractedData(prev => ({

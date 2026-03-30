@@ -264,72 +264,79 @@ export const extractFieldsFromLines = (lines, type) => {
 
     return {};
 };
-export const uploadTempDocuments = asyncHandler(async (req, res) => {
-    const { sessionId, doNumber } = req.body;
-
-    let types = req.body.types;
-    if (typeof types === "string") {
-        types = JSON.parse(types);
-    }
-
-    const uploaded = [];
-    const ocrResults = {};
-
-    for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
-        const type = types[i];
-
-        const url = await uploadToS3(file, doNumber, type);
-
-        await prisma.driver_Temp_Upload.create({
-            data: {
-                Session_Id: sessionId,
-                Doc_Type: type,
-                Image_Path: url,
-                Is_Selfie: false,
-            },
-        });
-
-        uploaded.push({ type, url });
-
-        // Only run Textract for image documents; skip PDFs and selfie.
-        // if (type !== "selfie" && file.mimetype.startsWith("image/")) {
-        //     const lines = await extractTextFromS3Url(url);
-        //     const fields = extractFieldsFromLines(lines, type);
-        //     ocrResults[type] = {
-        //         lines,
-        //         fields,
-        //     };
-        // }
-        // it extact for Images and PDF s well.
-        if (type !== "selfie") {
-            let lines = [];
-
-            if (file.mimetype.startsWith("image/")) {
-                lines = await extractTextFromS3Url(url);  // existing logic
-            }
-
-            if (file.mimetype === "application/pdf") {
-                lines = await extractTextFromPdf(url);
-            }
-
-            const fields = extractFieldsFromLines(lines, type);
-
-            ocrResults[type] = {
-                lines,
-                fields
-            };
+    export const uploadTempDocuments = asyncHandler(async (req, res) => {
+        const { sessionId, doNumber } = req.body;
+        // ✅ Validate required fields
+        if (!sessionId || !doNumber) {
+            throw new ApiError(400, "sessionId and doNumber are required");
         }
-    }
+        if (!req.files || req.files.length === 0) {
+            throw new ApiError(400, "No files uploaded");
+        }
+        let types = req.body.types;
+        
+        if (typeof types === "string") {
+            types = JSON.parse(types);
+        }
 
-    return res.json(
-        new ApiResponse(
-            200,
-            { files: uploaded, ocr: ocrResults },
-            "Documents uploaded"
-        )
-    );
-});
+        const uploaded = [];
+        const ocrResults = {};
+
+        for (let i = 0; i < req.files.length; i++) {
+            const file = req.files[i];
+            const type = types[i];
+
+            const url = await uploadToS3(file, doNumber, type);
+
+            await prisma.driver_Temp_Upload.create({
+                data: {
+                    Session_Id: sessionId,
+                    Doc_Type: type,
+                    Image_Path: url,
+                    Is_Selfie: false,
+                },
+            });
+
+            uploaded.push({ type, url });
+
+            // Only run Textract for image documents; skip PDFs and selfie.
+            // if (type !== "selfie" && file.mimetype.startsWith("image/")) {
+            //     const lines = await extractTextFromS3Url(url);
+            //     const fields = extractFieldsFromLines(lines, type);
+            //     ocrResults[type] = {
+            //         lines,
+            //         fields,
+            //     };
+            // }
+            // it extact for Images and PDF s well.
+            if (type !== "selfie") {
+                let lines = [];
+
+                if (file.mimetype.startsWith("image/")) {
+                    lines = await extractTextFromS3Url(url);  // existing logic
+                }
+
+                if (file.mimetype === "application/pdf") {
+                    lines = await extractTextFromPdf(url);
+                }
+
+                const fields = extractFieldsFromLines(lines, type);
+
+                ocrResults[type] = {
+                    lines,
+                    fields
+                };
+            }
+        }
+
+        return res.json(
+            new ApiResponse(
+                200,
+                { files: uploaded, ocr: ocrResults },
+                "Documents uploaded"
+            )
+        );
+    });
 
 // export const uploadTempSelfie = asyncHandler(async (req, res) => {
 //     if (!req.file) {
