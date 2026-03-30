@@ -10,9 +10,18 @@ import { basicAuth } from "./Middlewares/basicAuth.js";
 const app = express();
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true
+    origin: [
+        process.env.CORS_ORIGIN,
+        "https://kvrs.kritiindia.com",
+        "http://localhost:5173",
+        "http://localhost:4173",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+app.options("*", cors()); // ✅ preflight
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
