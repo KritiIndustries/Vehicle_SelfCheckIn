@@ -71,49 +71,172 @@ const SelfieVerification = () => {
     /* HANDLE CAPTURE */
     /* ========================= */
 
+    // const handleFileChange = async (e) => {
+    //     const file = e.target.files[0];
+    //     if (!file) return;
+
+    //     try {
+    //         setUploading(true);
+    //         const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
+    //         const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+
+    //         const vehicleNo =
+    //             ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+    //         setProgress(0);
+
+    //         const previewUrl = URL.createObjectURL(file);
+    //         setPreview(previewUrl);
+
+    //         const formData = new FormData();
+    //         formData.append("sessionId", sessionId);
+    //         formData.append("doNumber", value?.doNumber);
+    //         formData.append("vehicleNo", vehicleNo);
+
+    //         formData.append("selfie", file);
+
+    //         await axios.post(`${API}/api/driver/upload-selfie`, formData, {
+    //             headers: { "Content-Type": "multipart/form-data" },
+    //             onUploadProgress: (progressEvent) => {
+    //                 const percent = Math.round(
+    //                     (progressEvent.loaded * 100) / progressEvent.total
+    //                 );
+    //                 setProgress(percent);
+    //             },
+    //         });
+
+    //         setUploading(false);
+    //         setUploaded(true);
+
+    //     } catch (error) {
+    //         toast.error(error.response?.data?.message || "Selfie upload failed");
+    //         speak(error.response?.data?.message || "Selfie upload failed");
+    //         setUploading(false);
+    //     }
+    // };
+
+
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000; // 1 second
+
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        // ✅ Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("File size must be less than 5MB");
+            speak("फ़ाइल का आकार 5MB से कम होना चाहिए");
+            return;
+        }
+
+        // ✅ Validate file type
+        const allowedTypes = [
+            "image/jpeg", "image/jpg", "image/png", "image/webp",
+            "image/heic", "image/heif", "application/octet-stream"
+        ];
+        const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
+        const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+            toast.error("Only image files allowed for selfie");
+            speak("केवल इमेज फ़ाइल अपलोड करें");
+            return;
+        }
+
+        let objectUrl = null;
+
         try {
             setUploading(true);
-            const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
-            const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
-
-            const vehicleNo =
-                ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
             setProgress(0);
 
-            const previewUrl = URL.createObjectURL(file);
-            setPreview(previewUrl);
+            const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
+            const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+            const vehicleNo = ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+
+            // ✅ Create preview URL and track it for cleanup
+            objectUrl = URL.createObjectURL(file);
+            setPreview(objectUrl);
 
             const formData = new FormData();
             formData.append("sessionId", sessionId);
             formData.append("doNumber", value?.doNumber);
             formData.append("vehicleNo", vehicleNo);
-
             formData.append("selfie", file);
 
-            await axios.post(`${API}/api/driver/upload-selfie`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-                onUploadProgress: (progressEvent) => {
-                    const percent = Math.round(
-                        (progressEvent.loaded * 100) / progressEvent.total
-                    );
-                    setProgress(percent);
-                },
-            });
+            // ✅ Retry logic
+            let lastError = null;
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    await axios.post(`${API}/api/driver/upload-selfie`, formData, {
+                        headers: { "Content-Type": "multipart/form-data" },
+                        timeout: 30000, // ✅ 30 second timeout
+                        onUploadProgress: (progressEvent) => {
+                            const percent = Math.round(
+                                (progressEvent.loaded * 100) / progressEvent.total
+                            );
+                            setProgress(percent);
+                        },
+                    });
 
-            setUploading(false);
-            setUploaded(true);
+                    // ✅ Success
+                    setUploaded(true);
+                    return; // exit retry loop
+
+                } catch (err) {
+                    lastError = err;
+
+                    const status = err.response?.status;
+
+                    // ✅ Don't retry on client errors (4xx)
+                    if (status && status >= 400 && status < 500) {
+                        throw err;
+                    }
+
+                    // ✅ Retry on network/server errors
+                    if (attempt < MAX_RETRIES) {
+                        toast.warning(`Upload failed, retrying... (${attempt}/${MAX_RETRIES})`);
+                        setProgress(0);
+                        await sleep(RETRY_DELAY * attempt); // exponential backoff
+                    }
+                }
+            }
+
+            // All retries failed
+            throw lastError;
 
         } catch (error) {
-            toast.error(error.response?.data?.message || "Selfie upload failed");
-            speak(error.response?.data?.message || "Selfie upload failed");
+            // ✅ Cleanup preview on failure
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
+                setPreview(null);
+            }
+            setUploaded(false);
+
+            // ✅ Specific error messages
+            let message = "Selfie upload failed";
+
+            if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
+                message = "Network error — please check your connection";
+                speak("नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।");
+            } else if (error.response?.status === 413) {
+                message = "File too large — please use a smaller image";
+                speak("फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।");
+            } else if (error.response?.status === 401) {
+                message = "Session expired — please restart";
+                speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
+            } else {
+                message = error.response?.data?.message || message;
+                speak(message);
+            }
+
+            toast.error(message);
+
+        } finally {
             setUploading(false);
         }
     };
-
     /* ========================= */
     /* FINALIZE CHECKIN */
     /* ========================= */
