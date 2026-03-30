@@ -16,12 +16,12 @@ app.use(cors({
         "http://localhost:5173",
         "http://localhost:4173",
     ],
-    credentials: true,
+    // credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-app.options("*", cors()); // ✅ preflight
+// ✅ preflight
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
