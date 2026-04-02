@@ -321,7 +321,7 @@ export default function GuardDashboard() {
             <AppHeader showAudio={false} showLogOut={true} />
 
             {/* HEADER */}
-            <div className="px-5 pt-4 pb-2">
+            <div className="px-5 pt-4 pb-2 shrink-0">
                 <h1
                     className="text-xl font-bold"
                     style={{ color: "hsl(var(--foreground))" }}
@@ -337,7 +337,7 @@ export default function GuardDashboard() {
             </div>
 
             {/* STATS */}
-            <div className="grid grid-cols-3 gap-3 px-5 mb-4">
+            <div className="grid grid-cols-3 gap-3 px-5 mb-4 shrink-0">
                 <StatCard
                     label="Queue"
                     value={queueVehicles.length}
@@ -356,7 +356,7 @@ export default function GuardDashboard() {
             </div>
 
             {/* TABS */}
-            <div className="flex px-5 gap-2 mb-3">
+            <div className="flex px-5 gap-2 mb-3 shrink-0">
                 <TabButton
                     active={activeTab === "queue"}
                     onClick={() => setActiveTab("queue")}
@@ -373,7 +373,7 @@ export default function GuardDashboard() {
             </div>
 
             {/* LIST */}
-            <div className="px-5 space-y-3 pb-6 overflow-auto flex-1">
+            <div className="px-5 space-y-3 pb-6 flex-1 overflow-y-auto">
                 {displayed.map((v) => (
                     <button
                         key={v.id}

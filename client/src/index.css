@@ -127,12 +127,15 @@
     border: 1px solid hsl(var(--accent) / 0.2);
     color: hsl(var(--accent));
   }
-  
-  
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
+
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 
   .card-upload {
     @apply border-2 border-dashed rounded-xl p-6
@@ -154,17 +157,26 @@
     border-color: hsl(var(--success) / 0.3);
   }
 
-  .mobile-container {
+  /* .mobile-container {
     @apply max-w-md mx-auto min-h-screen flex flex-col;
     background-color: hsl(var(--background));
+  } */
+  .mobile-container {
+    @apply max-w-md mx-auto flex flex-col;
+    background-color: hsl(var(--background));
+    height: 100dvh; /* ✅ dynamic viewport height — handles mobile browser bars */
+    overflow: hidden; /* ✅ prevent container itself from scrolling */
   }
 
   .page-content {
     @apply flex-1 px-5 py-4;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .page-bottom {
     @apply px-5 pb-6 pt-3;
+    flex-shrink: 0;
   }
 
   .status-badge {

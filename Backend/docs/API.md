@@ -5,7 +5,7 @@ Base URL: `https://<HOST>/api` (adjust per environment)
 Auth:
 
 - Guard endpoints use JWT: `Authorization: Bearer <token>` returned by `/api/auth/verify-otp`.
-- Weighbridge endpoint uses HTTP Basic auth (username: `prdadmin`, password: `kriti@555`).
+- Weighbridge endpoint uses HTTP Basic auth (username: `exampleuser`, password: `Example@123`).
 
 Response format:
 
@@ -198,9 +198,3 @@ curl -u prdadmin:kriti@555 -X POST https://HOST/api/weighbridge \
 - 500: Server / integration error (e.g., ZGP API failed)
 
 ---
-
-## Next steps / Recommendations
-
-- Add API request/response JSON schema examples (OpenAPI). See `openapi.yaml` alongside this file.
-- Add authentication token expiry and refresh policy to security section.
-- Add rate-limiting and CORS production settings.

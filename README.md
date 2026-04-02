@@ -107,4 +107,4 @@ Production-ready API documentation for the backend is available in:
 - [Backend/docs/API.md](Backend/docs/API.md)
 - [Backend/docs/openapi.yaml](Backend/docs/openapi.yaml)
 
-You can also import the Postman collection at [Backend/docs/postman_collection.json](Backend/docs/postman_collection.json) and use `{{baseUrl}}` to point to your running API (default `http://localhost:3000/api`).
+You can also import the Postman collection at [Backend/docs/postman_collection.json](Backend/docs/postman_collection.json) and use `{{baseUrl}}` to point to your running API (default `http://localhost:5000/api`).

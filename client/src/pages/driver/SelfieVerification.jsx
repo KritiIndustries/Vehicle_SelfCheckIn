@@ -62,6 +62,14 @@ const SelfieVerification = () => {
         } else {
             fileInputRef.current.removeAttribute("capture");
         }
+        // ✅ Revoke old preview URL before resetting
+        if (preview) {
+            URL.revokeObjectURL(preview);
+        }
+        // ✅ Reset states for retake
+        setPreview(null);
+        setUploaded(false);
+        setProgress(0);
 
         fileInputRef.current.value = "";
         fileInputRef.current.click();

@@ -56,7 +56,7 @@ const allowedDocTypes = ["dl", "license", "rc", "insurance", "fitness"];
 
 import fetchCsrfToken from "../services/fetchCsrfToken.service.js";
 import insertZGP from "../utils/insertZGP.js";
-import { uploadToS3 } from "../services/s3.service.js";
+import { deleteFromS3, uploadToS3 } from "../services/s3.service.js";
 import { extractTextFromPdf, extractTextFromS3Url } from "../services/textract.service.js";
 import { ensureImageQuality } from "../services/imageQuality.service.js";
 import parseDrivingLicense from "../services/parsers/parseDrivingLicense.js";
@@ -116,138 +116,6 @@ export const uploadTempDocument = asyncHandler(async (req, res) => {
     );
 });
 
-
-
-
-// const extractFieldsFromLines = (lines = [], type) => {
-//     const text = lines.join(" ");
-//     const dateMatch = text.match(/\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b/);
-//     const firstDate = dateMatch ? dateMatch[1] : null;
-
-//     if (type === "dl" || type === "license") {
-//         const licenseMatch =
-//             text.match(/[A-Z]{2}\d{2}[A-Z0-9\-\/]*\d+/) ||
-//             text.match(/[A-Z0-9]+[-/][A-Z0-9\-\/]+/);
-
-//         const nameLine =
-//             lines.find((l) => /name/i.test(l)) ||
-//             lines.find((l) => /^[A-Z ]{3,}$/.test(l.trim()));
-
-//         return {
-//             documentType: "drivingLicense",
-//             licenseNo: licenseMatch ? licenseMatch[0] : null,
-//             name: nameLine ? nameLine.replace(/name[:\-]*/i, "").trim() : null,
-//             expiryDate: firstDate,
-//         };
-//     }
-
-//     if (type === "insurance") {
-//         const policyMatch = text.match(/\b[PA]\w{5,}\b/);
-
-//         return {
-//             documentType: "insurance",
-//             policyNo: policyMatch ? policyMatch[0] : null,
-//             expiryDate: firstDate,
-//         };
-//     }
-
-//     if (type === "rc") {
-//         const vehicleMatch = text.match(
-//             /\b[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}\b/
-//         );
-//         const chassisMatch = text.match(/\b[0-9A-Z]{10,}\b/);
-
-//         return {
-//             documentType: "vehicleRC",
-//             vehicleNo: vehicleMatch ? vehicleMatch[0] : null,
-//             chassisNo: chassisMatch ? chassisMatch[0] : null,
-//             expiryDate: firstDate,
-//         };
-//     }
-
-//     if (type === "fitness") {
-//         return {
-//             documentType: "fitness",
-//             expiryDate: firstDate,
-//         };
-//     }
-
-//     return {
-//         documentType: type,
-//     };
-// };
-
-
-// const extractFieldsFromLines = (lines = [], type) => {
-
-//     const text = lines.join(" ").toUpperCase();
-
-//     const dateRegex = /\b(\d{1,2}[-/]\d{1,2}[-/]\d{2,4})\b/g;
-//     const dates = [...text.matchAll(dateRegex)].map(d => parseDate(d[1]));
-
-//     if (type === "dl" || type === "license") {
-
-//         const licenseRegex =
-//             /\b[A-Z]{2}\d{2}[A-Z]?[- ]?\d{4}[- ]?\d{7}\b|\bDL\d{10,}\b/;
-
-//         const licenseNo = text.match(licenseRegex)?.[0] || null;
-
-//         const nameLine =
-//             lines.find(l => /NAME/i.test(l)) ||
-//             lines.find(l =>
-//                 /^[A-Z\s]{5,}$/.test(l.trim()) &&
-//                 !l.includes("LICENCE") &&
-//                 !l.includes("GOVERNMENT")
-//             );
-
-//         return {
-//             documentType: "drivingLicense",
-//             name: nameLine ? nameLine.replace(/NAME[:\-]*/i, "").trim() : null,
-//             licenseNo,
-//             expiryDate: dates[1] || dates[0] || null
-//         };
-//     }
-
-//     if (type === "rc") {
-
-//         const vehicleRegex =
-//             /\b[A-Z]{2}\d{2}[A-Z]{1,2}\d{4}\b/;
-
-//         const chassisRegex =
-//             /\b[A-HJ-NPR-Z0-9]{16,17}\b/;
-
-//         return {
-//             documentType: "vehicleRC",
-//             vehicleNo: text.match(vehicleRegex)?.[0] || null,
-//             chassisNo: text.match(chassisRegex)?.[0] || null,
-//             expiryDate: dates[0] || null
-//         };
-//     }
-
-//     if (type === "insurance") {
-
-//         const policyRegex =
-//             /\b[A-Z0-9]{6,20}\b/;
-
-//         return {
-//             documentType: "insurance",
-//             policyNo: text.match(policyRegex)?.[0] || null,
-//             expiryDate: dates[0] || null
-//         };
-//     }
-
-//     if (type === "fitness") {
-
-//         return {
-//             documentType: "fitness",
-//             expiryDate: dates[0] || null
-//         };
-//     }
-
-//     return {};
-// };
-
-
 export const extractFieldsFromLines = (lines, type) => {
 
     if (type === "dl" || type === "license")
@@ -264,199 +132,88 @@ export const extractFieldsFromLines = (lines, type) => {
 
     return {};
 };
-    export const uploadTempDocuments = asyncHandler(async (req, res) => {
-        const { sessionId, doNumber } = req.body;
-        // ✅ Validate required fields
-        if (!sessionId || !doNumber) {
-            throw new ApiError(400, "sessionId and doNumber are required");
-        }
-        if (!req.files || req.files.length === 0) {
-            throw new ApiError(400, "No files uploaded");
-        }
-        let types = req.body.types;
-        
-        if (typeof types === "string") {
-            types = JSON.parse(types);
-        }
+export const uploadTempDocuments = asyncHandler(async (req, res) => {
+    const { sessionId, doNumber } = req.body;
+    // ✅ Validate required fields
+    if (!sessionId || !doNumber) {
+        throw new ApiError(400, "sessionId and doNumber are required");
+    }
+    if (!req.files || req.files.length === 0) {
+        throw new ApiError(400, "No files uploaded");
+    }
+    let types = req.body.types;
 
-        const uploaded = [];
-        const ocrResults = {};
+    if (typeof types === "string") {
+        types = JSON.parse(types);
+    }
+    // const doExisting = await prisma.driver_Checkin.findFirst({
+    //     where: {
+    //         Do_No: doNumber
+    //     }
+    // })
+    // if (doExisting) {
+    //     throw new ApiError(409, "This DO number already exists");
+    // }
 
-        for (let i = 0; i < req.files.length; i++) {
-            const file = req.files[i];
-            const type = types[i];
+    const uploaded = [];
+    const ocrResults = {};
 
-            const url = await uploadToS3(file, doNumber, type);
+    for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const type = types[i];
 
-            await prisma.driver_Temp_Upload.create({
-                data: {
-                    Session_Id: sessionId,
-                    Doc_Type: type,
-                    Image_Path: url,
-                    Is_Selfie: false,
-                },
-            });
+        const url = await uploadToS3(file, doNumber, type);
 
-            uploaded.push({ type, url });
+        await prisma.driver_Temp_Upload.create({
+            data: {
+                Session_Id: sessionId,
+                Doc_Type: type,
+                Image_Path: url,
+                Is_Selfie: false,
+            },
+        });
 
-            // Only run Textract for image documents; skip PDFs and selfie.
-            // if (type !== "selfie" && file.mimetype.startsWith("image/")) {
-            //     const lines = await extractTextFromS3Url(url);
-            //     const fields = extractFieldsFromLines(lines, type);
-            //     ocrResults[type] = {
-            //         lines,
-            //         fields,
-            //     };
-            // }
-            // it extact for Images and PDF s well.
-            if (type !== "selfie") {
-                let lines = [];
+        uploaded.push({ type, url });
 
-                if (file.mimetype.startsWith("image/")) {
-                    lines = await extractTextFromS3Url(url);  // existing logic
-                }
+        // Only run Textract for image documents; skip PDFs and selfie.
+        // if (type !== "selfie" && file.mimetype.startsWith("image/")) {
+        //     const lines = await extractTextFromS3Url(url);
+        //     const fields = extractFieldsFromLines(lines, type);
+        //     ocrResults[type] = {
+        //         lines,
+        //         fields,
+        //     };
+        // }
+        // it extact for Images and PDF s well.
+        if (type !== "selfie") {
+            let lines = [];
 
-                if (file.mimetype === "application/pdf") {
-                    lines = await extractTextFromPdf(url);
-                }
-
-                const fields = extractFieldsFromLines(lines, type);
-
-                ocrResults[type] = {
-                    lines,
-                    fields
-                };
+            if (file.mimetype.startsWith("image/")) {
+                lines = await extractTextFromS3Url(url);  // existing logic
             }
+
+            if (file.mimetype === "application/pdf") {
+                lines = await extractTextFromPdf(url);
+            }
+
+            const fields = extractFieldsFromLines(lines, type);
+
+            ocrResults[type] = {
+                lines,
+                fields
+            };
         }
+    }
 
-        return res.json(
-            new ApiResponse(
-                200,
-                { files: uploaded, ocr: ocrResults },
-                "Documents uploaded"
-            )
-        );
-    });
+    return res.json(
+        new ApiResponse(
+            200,
+            { files: uploaded, ocr: ocrResults },
+            "Documents uploaded"
+        )
+    );
+});
 
-// export const uploadTempSelfie = asyncHandler(async (req, res) => {
-//     if (!req.file) {
-//         throw new ApiError(400, "No selfie uploaded");
-//     }
-
-//     const { sessionId, doNumber } = req.body;
-
-//     if (!sessionId || typeof sessionId !== "string") {
-//         throw new ApiError(400, "Invalid sessionId");
-//     }
-
-//     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
-//         where: {
-//             Session_Id: sessionId,
-//             Is_Selfie: true,
-//         },
-//     });
-
-//     if (existingSelfie) {
-//         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
-//     }
-
-
-//     // if (req.file.mimetype.startsWith("image/")) {
-//     //     await ensureImageQuality(req.file.buffer);
-//     // }
-
-//     // Upload selfie to S3 and store URL
-//     const url = await uploadToS3(req.file, doNumber, "selfie");
-//     if (!url) {
-//         throw new ApiError(500, "S3 upload failed");
-//     }
-
-//     await prisma.driver_Temp_Upload.create({
-//         data: {
-//             Session_Id: sessionId,
-//             Doc_Type: "selfie",
-//             Image_Path: url,
-//             Is_Selfie: true,
-//             Created_At: new Date()
-//         },
-//     });
-
-//     return res.json(new ApiResponse(200, { fileUrl: url }, "Selfie uploaded"));
-// });
-
-// export const uploadTempSelfie = asyncHandler(async (req, res) => {
-//     if (!req.file) {
-//         throw new ApiError(400, "No selfie uploaded");
-//     }
-
-//     const { sessionId, doNumber, vehicleNo } = req.body;
-
-//     if (!sessionId || typeof sessionId !== "string") {
-//         throw new ApiError(400, "Invalid sessionId");
-//     }
-
-//     if (!vehicleNo) {
-//         throw new ApiError(400, "Vehicle number required for validation");
-//     }
-
-//     const existingSelfie = await prisma.driver_Temp_Upload.findFirst({
-//         where: {
-//             Session_Id: sessionId,
-//             Is_Selfie: true,
-//         },
-//     });
-
-//     if (existingSelfie) {
-//         throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
-//     }
-
-//     // ✅ Upload to S3
-//     const url = await uploadToS3(req.file, doNumber, "selfie");
-
-//     if (!url) {
-//         throw new ApiError(500, "S3 upload failed");
-//     }
-
-//     // 🔥 OCR EXTRACT NUMBER PLATE
-//     const detectedVehicleNo = await extractVehicleNumberFromSelfie(url);
-
-//     if (!detectedVehicleNo) {
-//         throw new ApiError(
-//             400,
-//             "Vehicle number not detected. Please stand closer and retake selfie."
-//         );
-//     }
-
-//     // 🔥 VALIDATION
-//     if (!isVehicleMatch(detectedVehicleNo, vehicleNo)) {
-//         throw new ApiError(
-//             400,
-//             `Vehicle mismatch. Found ${detectedVehicleNo}, expected ${vehicleNo}`
-//         );
-//     }
-
-//     // ✅ SAVE
-//     await prisma.driver_Temp_Upload.create({
-//         data: {
-//             Session_Id: sessionId,
-//             Doc_Type: "selfie",
-//             Image_Path: url,
-//             Is_Selfie: true,
-//             Created_At: new Date()
-//         },
-//     });
-
-//     return res.json(
-//         new ApiResponse(
-//             200,
-//             {
-//                 fileUrl: url,
-//                 detectedVehicleNo
-//             },
-//             "Selfie verified successfully"
-//         )
-//     );
-// });
 export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!req.file) {
         throw new ApiError(400, "No selfie uploaded");
@@ -480,7 +237,14 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     });
 
     if (existingSelfie) {
-        throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
+        // throw new ApiError(409, "सेल्फी पहले ही अपलोड हो चुकी है।");
+        await prisma.driver_Temp_Upload.delete({
+            where: { Id: existingSelfie.Id },
+        });
+        // Optional: delete old file from S3 too
+        console.log("delete");
+
+        await deleteFromS3(existingSelfie.Image_Path);
     }
 
     // ✅ Upload
@@ -496,7 +260,7 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!detectedList.length) {
         throw new ApiError(
             400,
-            "Vehicle number not detected. Please retake selfie properly."
+            "Number Plate  का पता नहीं चल पाया। कृपया सेल्फी ठीक से दोबारा लें।."
         );
     }
 
@@ -519,7 +283,7 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!match) {
         throw new ApiError(
             400,
-            `Vehicle mismatch. Found: ${detectedList.join(", ")}`
+            `आपकी आरसी में ट्रक नंबर और आपकी सेल्फी में ट्रक नंबर प्लेट एक जैसी नहीं हैं।. ${detectedList.join(", ")}`
         );
     }
 
