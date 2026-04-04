@@ -7,17 +7,25 @@ import crypto from "crypto";
 import axios from "axios";
 import fetchCsrfToken from "../services/fetchCsrfToken.service.js";
 
+// ✅ Helper — get IST date object from any Date
+const toIST = (d) => {
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    return new Date(d.getTime() + istOffset);
+};
 const formatSapDate = (d) => {
-    const yyyy = d.getFullYear().toString();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
+    const ist = toIST(d);
+    const yyyy = ist.getUTCFullYear().toString();
+    const mm = String(ist.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(ist.getUTCDate()).padStart(2, "0");
     return `${yyyy}${mm}${dd}`;
 };
 
+
 const formatSapTime = (d) => {
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mi = String(d.getMinutes()).padStart(2, "0");
-    const ss = String(d.getSeconds()).padStart(2, "0");
+    const ist = toIST(d);
+    const hh = String(ist.getUTCHours()).padStart(2, "0");
+    const mi = String(ist.getUTCMinutes()).padStart(2, "0");
+    const ss = String(ist.getUTCSeconds()).padStart(2, "0");
     return `${hh}${mi}${ss}`;
 };
 

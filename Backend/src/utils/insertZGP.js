@@ -46,8 +46,13 @@ const insertZGP = async (data, token) => {
         const url = `http://ktappdq.kritiindia.com:8010/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
 
         const now = new Date();
-        const todayStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-        const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, "");
+        // ✅ Always use IST (UTC+5:30) regardless of server timezone
+        const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in ms
+        const istNow = new Date(now.getTime() + istOffset);
+        // ✅ Format date as YYYYMMDD from IST time
+        const todayStr = istNow.toISOString().slice(0, 10).replace(/-/g, "");
+        // ✅ Format time as HHMMSS from IST time
+        const timeStr = istNow.toISOString().slice(11, 19).replace(/:/g, "");
 
         const payload = {
             ReportInDate: todayStr,
