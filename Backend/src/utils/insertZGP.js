@@ -58,6 +58,8 @@ const insertZGP = async (data, token) => {
             TransporterCode: "92000001",
             DoNumber: data.doNo,
         };
+        console.log("Playload", payload);
+
 
         const response = await axios.post(url, payload, {
             headers: {

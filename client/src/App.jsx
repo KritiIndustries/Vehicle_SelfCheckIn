@@ -38,11 +38,11 @@ const App = () => (
           } />
 
           {/* ================= DRIVER ROUTES (GEOFENCED) ================= */}
-          <Route path="/driver/login" element={
+          {/* <Route path="/driver/login" element={
             <GeoGuard>
               <DriverLogin />
             </GeoGuard>
-          } />
+          } /> */}
           <Route path="/driver/location" element={
             <GeoGuard>
               <LocationCheck />

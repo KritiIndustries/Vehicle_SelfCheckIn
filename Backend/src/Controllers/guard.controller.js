@@ -160,6 +160,7 @@ export const approveEntry = asyncHandler(async (req, res) => {
         ChkInDate: formatSapDate(now),
         ChkInTime: formatSapTime(now),
     };
+    console.log("Payload for Entry ZGP", payload);
 
 
     await postToZgp(payload);
@@ -233,6 +234,7 @@ export const checkoutVehicle = asyncHandler(async (req, res) => {
         UnladenWeight: weightbridge?.TareWeight?.toString() || "8000",
         LadenWeight: weightbridge?.GrossWeight?.toString() || "15000",
     };
+    console.log("Payload for Exit ZGP", payload);
 
     await postToZgp(payload);
 
@@ -243,6 +245,7 @@ export const checkoutVehicle = asyncHandler(async (req, res) => {
             Exit_Time: now,
         },
     });
+
 
     return res.status(200).json(new ApiResponse(200, updated, "Checkout saved"));
 });
