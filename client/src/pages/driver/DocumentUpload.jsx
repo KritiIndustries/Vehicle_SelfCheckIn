@@ -42,6 +42,695 @@ const getSessionId = () => {
     return sessionId;
 };
 
+// const DocumentUpload = () => {
+//     const navigate = useNavigate();
+//     const location = useLocation();
+//     const driverDetails = location.state;
+
+//     if (!driverDetails) {
+//         return <div className="mobile-container">No data found</div>;
+//     }
+//     const cameraInputRef = useRef(null);
+//     const galleryInputRef = useRef(null);
+//     const pdfInputRef = useRef(null);
+
+//     const [docs, setDocs] = useState({});
+//     const [showPicker, setShowPicker] = useState(null);
+//     const [currentDocKey, setCurrentDocKey] = useState(null);
+//     const [speak, audioEnabled, toggleAudio] = usePageAudio();
+//     const [showOCR, setShowOCR] = useState(false);
+//     const [currentImage, setCurrentImage] = useState(null);
+//     const [extractedData, setExtractedData] = useState({});
+//     const [showConfirmation, setShowConfirmation] = useState(false);
+//     const [loading, setloading] = useState(false);
+
+//     const sessionId = getSessionId();
+//     useEffect(() => {
+//         const welcomeText = "कृपया apne दस्तावेज़ अपलोड करें";
+//         speak(welcomeText);
+//     }, [speak, toggleAudio]);
+
+//     /* ========================= */
+//     /* OPEN PICKER */
+//     /* ========================= */
+
+//     const openPicker = (key) => {
+//         setCurrentDocKey(key);
+//         setShowPicker(true);
+//     };
+
+//     /* ========================= */
+//     /* TRIGGER INPUT */
+//     /* ========================= */
+
+//     const triggerFileInput = (type) => {
+//         if (type === "camera") {
+//             cameraInputRef.current?.click();
+//         }
+//         if (type === "gallery") {
+//             galleryInputRef.current?.click();
+//         }
+//         if (type === "pdf") {
+//             pdfInputRef.current?.click();
+//         }
+//     };
+
+//     /* ========================= */
+//     /* HANDLE FILE */
+//     /* ========================= */
+//     // const handleFileSelect = (file) => {
+
+//     //     if (!file || !currentDocKey) return;
+
+//     //     const allowedTypes = [
+//     //         "image/jpeg",
+//     //         ".heic",
+//     //         "image/jpg",
+//     //         "image/png",
+//     //         "image/webp",
+//     //         "image/avif",
+//     //         "image/bmp",
+//     //         "image/tiff",
+//     //         "image/heic",
+//     //         "image/heif",
+//     //         "application/pdf",
+//     //         "application/octet-stream"
+//     //     ];
+
+//     //     if (!allowedTypes.includes(file.type)) {
+//     //         toast.error("Only images or PDF allowed!!!!!");
+//     //         return;
+//     //     }
+
+//     //     setShowPicker(null);
+
+//     //     const preview =
+//     //         file.type.startsWith("image/")
+//     //             ? URL.createObjectURL(file)
+//     //             : null;
+
+//     //     setDocs(prev => ({
+//     //         ...prev,
+//     //         [currentDocKey]: {
+//     //             preview,
+//     //             progress: 0,
+//     //             uploading: false,
+//     //             uploaded: false,
+//     //             file
+//     //         }
+//     //     }));
+//     // };
+
+//     const handleFileSelect = (file) => {
+
+//         if (!file || !currentDocKey) return;
+
+//         const allowedMimeTypes = [
+//             "image/jpeg",
+//             "image/jpg",
+//             "image/png",
+//             "image/webp",
+//             "image/avif",
+//             "image/bmp",
+//             "image/tiff",
+//             "image/heic",
+//             "image/heif",
+//             "application/pdf",
+//             "application/octet-stream" // fallback
+//         ];
+
+//         const allowedExtensions = [
+//             ".jpg", ".jpeg", ".png", ".webp", ".avif",
+//             ".bmp", ".tiff",
+//             ".heic", ".heif",
+//             ".pdf"
+//         ];
+
+//         const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+//         // ✅ FIX: handle HEIC (empty type case)
+//         if (
+//             (!file.type && allowedExtensions.includes(ext)) ||
+//             (allowedMimeTypes.includes(file.type) && allowedExtensions.includes(ext))
+//         ) {
+
+//             setShowPicker(null);
+
+//             const preview =
+//                 file.type.startsWith("image/") && ext !== ".heic" && ext !== ".heif"
+//                     ? URL.createObjectURL(file)
+//                     : null; // ❌ HEIC preview not supported
+
+//             setDocs(prev => ({
+//                 ...prev,
+//                 [currentDocKey]: {
+//                     preview,
+//                     progress: 0,
+//                     uploading: false,
+//                     uploaded: false,
+//                     file
+//                 }
+//             }));
+
+//         } else {
+//             toast.error("Only images or PDF allowed");
+//             return;
+//         }
+//     };
+
+//     // const uploadAllDocuments = async () => {
+
+//     //     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
+
+//     //     const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
+
+//     //     if (missingDocs.length) {
+//     //         toast.error("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
+//     //         speak("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
+//     //         return;
+//     //     }
+
+//     //     const formData = new FormData();
+
+//     //     formData.append("sessionId", sessionId);
+//     //     formData.append("doNumber", driverDetails?.doNumber);
+
+//     //     const types = [];
+
+//     //     requiredDocs.forEach((key) => {
+
+//     //         const file = docs[key].file;
+
+//     //         formData.append("documents", file);
+//     //         types.push(key);
+
+//     //     });
+
+//     //     formData.append("types", JSON.stringify(types));
+
+//     //     try {
+//     //         setloading(true);
+
+//     //         const res = await axios.post(
+//     //             `${API}/api/driver/upload-docs`,
+//     //             formData,
+//     //             {
+//     //                 headers: {
+//     //                     "Content-Type": "multipart/form-data"
+//     //                 },
+//     //                 onUploadProgress: (progressEvent) => {
+
+//     //                     const percent = Math.round(
+//     //                         (progressEvent.loaded * 100) / progressEvent.total
+//     //                     );
+
+//     //                     setDocs(prev => {
+//     //                         const updated = { ...prev };
+
+//     //                         requiredDocs.forEach(k => {
+//     //                             if (updated[k]) {
+//     //                                 updated[k].progress = percent;
+//     //                                 updated[k].uploading = percent < 100;
+//     //                                 updated[k].uploaded = percent === 100;
+//     //                             }
+//     //                         });
+
+//     //                         return updated;
+//     //                     });
+
+//     //                 }
+//     //             }
+//     //         );
+
+//     //         const ocr = res.data?.data?.ocr;
+
+//     //         if (ocr) {
+//     //             sessionStorage.setItem("ocrData", JSON.stringify(ocr));
+//     //         }
+
+//     //         toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+//     //         speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+
+//     //         navigate("/driver/doc-review");
+
+//     //     } catch (error) {
+
+//     //         console.error(error);
+
+//     //         toast.error(
+//     //             error.res?.data?.message || "Document upload failed"
+//     //         );
+
+//     //         speak(error.res?.data?.message || "Upload failed");
+
+//     //     }
+//     //     finally {
+//     //         setloading(false);
+//     //     }
+
+//     // };
+
+
+
+
+//     const MAX_RETRIES = 3;
+//     const RETRY_DELAY = 1000;
+//     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+//     const uploadAllDocuments = async () => {
+//         const requiredDocs = ["dl", "rc", "insurance", "fitness"];
+
+//         // ✅ Validate all docs selected
+//         const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
+//         if (missingDocs.length) {
+//             const missingLabels = missingDocs.map(d =>
+//                 docTypes.find(dt => dt.key === d)?.label || d
+//             ).join(", ");
+//             toast.error(`कृपया यह दस्तावेज़ अपलोड करें: ${missingLabels}`);
+//             speak(`कृपया यह दस्तावेज़ अपलोड करें: ${missingLabels}`);
+//             return;
+//         }
+
+//         // ✅ Validate each file size (5MB max per file)
+//         const oversizedDocs = requiredDocs.filter(d => docs[d]?.file?.size > 5 * 1024 * 1024);
+//         if (oversizedDocs.length) {
+//             const labels = oversizedDocs.map(d =>
+//                 docTypes.find(dt => dt.key === d)?.label || d
+//             ).join(", ");
+//             toast.error(`File too large (max 5MB): ${labels}`);
+//             speak(`यह फ़ाइल बहुत बड़ी है: ${labels}`);
+//             return;
+//         }
+
+//         const formData = new FormData();
+//         formData.append("sessionId", sessionId);
+//         formData.append("doNumber", driverDetails?.doNumber);
+
+//         const types = [];
+//         requiredDocs.forEach((key) => {
+//             formData.append("documents", docs[key].file);
+//             types.push(key);
+//         });
+//         formData.append("types", JSON.stringify(types));
+
+//         // ✅ Reset progress for all docs
+//         setDocs(prev => {
+//             const updated = { ...prev };
+//             requiredDocs.forEach(k => {
+//                 if (updated[k]) {
+//                     updated[k].progress = 0;
+//                     updated[k].uploading = true;
+//                     updated[k].uploaded = false;
+//                 }
+//             });
+//             return updated;
+//         });
+
+//         try {
+//             setloading(true);
+
+//             let lastError = null;
+//             let res = null;
+
+//             // ✅ Retry logic
+//             for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+//                 try {
+//                     res = await axios.post(
+//                         `${API}/api/driver/upload-docs`,
+//                         formData,
+//                         {
+//                             headers: { "Content-Type": "multipart/form-data" },
+//                             timeout: 60000, // ✅ 60 seconds for 4 docs
+//                             onUploadProgress: (progressEvent) => {
+//                                 const percent = Math.round(
+//                                     (progressEvent.loaded * 100) / progressEvent.total
+//                                 );
+//                                 setDocs(prev => {
+//                                     const updated = { ...prev };
+//                                     requiredDocs.forEach(k => {
+//                                         if (updated[k]) {
+//                                             updated[k].progress = percent;
+//                                             updated[k].uploading = percent < 100;
+//                                             updated[k].uploaded = percent === 100;
+//                                         }
+//                                     });
+//                                     return updated;
+//                                 });
+//                             }
+//                         }
+//                     );
+
+//                     break; // ✅ success — exit retry loop
+
+//                 } catch (err) {
+//                     lastError = err;
+
+//                     const status = err.response?.status;
+
+//                     // ✅ Don't retry on client errors (4xx)
+//                     if (status && status >= 400 && status < 500) {
+//                         throw err;
+//                     }
+
+//                     // ✅ Retry on network/server errors
+//                     if (attempt < MAX_RETRIES) {
+//                         toast.warning(`Upload failed, retrying... (${attempt}/${MAX_RETRIES})`);
+
+//                         // Reset progress on retry
+//                         setDocs(prev => {
+//                             const updated = { ...prev };
+//                             requiredDocs.forEach(k => {
+//                                 if (updated[k]) {
+//                                     updated[k].progress = 0;
+//                                 }
+//                             });
+//                             return updated;
+//                         });
+
+//                         await sleep(RETRY_DELAY * attempt); // exponential backoff
+//                     }
+//                 }
+//             }
+
+//             if (!res) throw lastError;
+
+//             // ✅ Store OCR data
+//             const ocr = res.data?.data?.ocr;
+//             if (ocr) {
+//                 sessionStorage.setItem("ocrData", JSON.stringify(ocr));
+//             } else {
+//                 console.warn("No OCR data received");
+//             }
+
+//             toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं");
+//             speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
+
+//             navigate("/driver/doc-review");
+
+//         } catch (error) {
+//             console.error("Upload error:", error);
+
+//             // ✅ Reset all doc upload states on failure
+//             setDocs(prev => {
+//                 const updated = { ...prev };
+//                 requiredDocs.forEach(k => {
+//                     if (updated[k]) {
+//                         updated[k].progress = 0;
+//                         updated[k].uploading = false;
+//                         updated[k].uploaded = false;
+//                     }
+//                 });
+//                 return updated;
+//             });
+
+//             // ✅ Specific error messages
+//             let message = "Document upload failed";
+
+//             if (error.code === "ECONNABORTED") {
+//                 message = "Upload timed out — please try again";
+//                 speak("अपलोड में बहुत समय लग रहा है। कृपया दोबारा कोशिश करें।");
+//             } else if (error.code === "ERR_NETWORK") {
+//                 message = "Network error — please check your connection";
+//                 speak("नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।");
+//             } else if (error.response?.status === 413) {
+//                 message = "Files too large — please use smaller images";
+//                 speak("फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।");
+//             } else if (error.response?.status === 401) {
+//                 message = "Session expired — please restart";
+//                 speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
+//             } else if (error.response?.status === 400) {
+//                 message = error.response?.data?.message || "Invalid request";
+//                 speak(message);
+//             } else {
+//                 message = error.response?.data?.message || message;
+//                 speak(message);
+//             }
+
+//             toast.error(message);
+
+//         } finally {
+//             setloading(false);
+//         }
+//     };
+
+//     const handleOCRComplete = (ocrData) => {
+//         // Store extracted data
+//         setExtractedData(prev => ({
+//             ...prev,
+//             [currentDocKey]: ocrData
+//         }));
+
+//         setShowOCR(false);
+
+//         // Now upload the file after OCR confirmation
+//         const docState = docs[currentDocKey];
+//         if (docState && docState.file) {
+//             uploadAllDocuments(currentDocKey, docState.file);
+//         }
+//     };
+
+//     const handleOCRCancel = () => {
+//         setShowOCR(false);
+//         setCurrentImage(null);
+//         // Remove the temporary document state
+//         setDocs(prev => {
+//             const newDocs = { ...prev };
+//             delete newDocs[currentDocKey];
+//             return newDocs;
+//         });
+//     };
+
+//     const onInputChange = (e) => {
+//         const file = e.target.files[0];
+//         handleFileSelect(file);
+//         e.target.value = "";
+//     };
+
+//     const handleNextClick = () => {
+//         setShowConfirmation(true);
+//     };
+
+//     const handleConfirmProceed = () => {
+//         setShowConfirmation(false);
+//         navigate("/driver/selfie");
+//     };
+
+//     const handleCancelProceed = () => {
+//         setShowConfirmation(false);
+//     };
+
+//     const allSelected = docTypes.every(d => docs[d.key]?.file);
+
+//     return (
+//         <div className="mobile-container">
+//             <AppHeader audioEnabled={audioEnabled} onToggleAudio={toggleAudio} />
+
+//             <div className="page-content">
+//                 <StepIndicator
+//                     currentStep={2}
+//                     totalSteps={4}
+//                     label="Upload Documents"
+//                     labelHi="दस्तावेज़ अपलोड करें"
+//                 />
+
+//                 <InfoBanner
+//                     text="Tap below to upload"
+//                     textHi="अपलोड करने के लिए नीचे टैप करें"
+//                 />
+
+//                 {/* DOCUMENT GRID */}
+//                 <div className="grid grid-cols-2 gap-3 mt-4">
+//                     {docTypes.map((doc) => {
+//                         const state = docs[doc.key];
+//                         const Icon = doc.icon;
+
+//                         return (
+//                             <button
+//                                 key={doc.key}
+//                                 onClick={() => openPicker(doc.key)}
+//                                 className="relative card-upload"
+//                             >
+//                                 {state?.uploaded && (
+//                                     <div className="absolute top-2 right-2 w-5 h-5 bg-success rounded-full flex items-center justify-center">
+//                                         <Check className="w-3 h-3 text-success-foreground" />
+//                                     </div>
+//                                 )}
+
+//                                 {state?.preview ? (
+//                                     <img
+//                                         src={state.preview}
+//                                         alt="preview"
+//                                         className="w-full h-20 object-cover rounded-md mb-2"
+//                                     />
+//                                 ) : (
+//                                     <Icon className="w-8 h-8 text-muted-foreground mb-2" />
+//                                 )}
+
+//                                 <span className="text-sm font-medium">
+//                                     {doc.label}
+//                                 </span>
+
+//                                 {state?.uploading && (
+//                                     <div className="w-full mt-2">
+//                                         <div className="h-1 bg-muted rounded-full overflow-hidden">
+//                                             <div
+//                                                 className="h-full bg-primary transition-all"
+//                                                 style={{
+//                                                     width: `${state.progress}%`,
+//                                                 }}
+//                                             />
+//                                         </div>
+//                                         <p className="text-xs mt-1 text-muted-foreground">
+//                                             {state.progress}%
+//                                         </p>
+//                                     </div>
+//                                 )}
+
+//                                 {state?.file?.type === "application/pdf" && (
+//                                     <p className="text-xs text-muted-foreground mt-1">
+//                                         PDF Selected
+//                                     </p>
+//                                 )}
+//                             </button>
+//                         );
+//                     })}
+//                 </div>
+//             </div>
+
+//             <div className="page-bottom">
+//                 {
+//                     !loading ? (<button
+//                         onClick={uploadAllDocuments}
+//                         disabled={!allSelected}
+//                         className="btn-primary-full disabled:opacity-50"
+//                     >
+//                         Next / आगे बढ़ें →
+//                     </button>) : (
+//                         <Button
+//                             variant="primary"
+//                             disabled
+//                             className="btn-primary-full "
+//                         >Uploading...
+
+//                             <Spinner className="mr-2" data-icon="inline-start" />
+//                         </Button>
+//                     )
+//                 }
+
+//             </div>
+
+//             {/* SELECT OPTION SHEET */}
+//             {showPicker && (
+//                 <div className="fixed inset-0 z-50 flex items-end justify-center">
+//                     {/* BACKDROP */}
+//                     <div
+//                         className="absolute inset-0"
+//                         style={{ background: "hsl(var(--foreground) / 0.4)" }}
+//                         onClick={() => setShowPicker(null)}
+//                     />
+
+//                     {/* SHEET */}
+//                     <div
+//                         className="relative w-full max-w-md rounded-t-3xl p-6 shadow-2xl transition-all duration-300 animate-[slideUp_0.25s_ease-out]"
+//                         style={{ background: "hsl(var(--card))" }}
+//                     >
+//                         <h3
+//                             className="text-lg font-semibold text-center mb-1"
+//                             style={{ color: "hsl(var(--foreground))" }}
+//                         >
+//                             Select Option / विकल्प चुनें
+//                         </h3>
+
+//                         <div className="grid grid-cols-3 gap-4 mt-5">
+//                             <button
+//                                 onClick={() => triggerFileInput("camera")}
+//                                 className="flex flex-col items-center gap-2"
+//                             >
+//                                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-muted">
+//                                     <Camera className="w-6 h-6" />
+//                                 </div>
+//                                 <span className="text-xs">Take Photo</span>
+//                             </button>
+
+//                             <button
+//                                 onClick={() => triggerFileInput("pdf")}
+//                                 className="flex flex-col items-center gap-2"
+//                             >
+//                                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-muted">
+//                                     <Upload className="w-6 h-6" />
+//                                 </div>
+//                                 <span className="text-xs">Upload PDF</span>
+//                             </button>
+
+//                             <button
+//                                 onClick={() => triggerFileInput("gallery")}
+//                                 className="flex flex-col items-center gap-2"
+//                             >
+//                                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-muted">
+//                                     <Image className="w-6 h-6" />
+//                                 </div>
+//                                 <span className="text-xs">Gallery</span>
+//                             </button>
+//                         </div>
+
+//                         <button
+//                             onClick={() => setShowPicker(null)}
+//                             className="w-full text-center text-sm font-medium mt-6"
+//                             style={{ color: "hsl(var(--destructive))" }}
+//                         >
+//                             Cancel / रद्द करें
+//                         </button>
+//                     </div>
+//                 </div>
+//             )}
+
+//             {/* Hidden Inputs */}
+//             <input
+//                 type="file"
+//                 accept="image/*"
+//                 capture="environment"
+//                 ref={cameraInputRef}
+//                 onChange={onInputChange}
+//                 className="hidden"
+//             />
+
+//             <input
+//                 type="file"
+//                 accept="image/*"
+//                 ref={galleryInputRef}
+//                 onChange={onInputChange}
+//                 className="hidden"
+//             />
+
+//             <input
+//                 type="file"
+//                 accept="application/pdf"
+//                 ref={pdfInputRef}
+//                 onChange={onInputChange}
+//                 className="hidden"
+//             />
+
+//             {/* OCR Processor Modal */}
+//             {/* {showOCR && (
+//                 <OCRProcessor
+//                     image={currentImage}
+//                     // onOCRComplete={handleOCRComplete}
+//                     onCancel={handleOCRCancel}
+//                 />
+//             )} */}
+
+//             {/* Confirmation Dialog */}
+//             <ConfirmationDialog
+//                 isOpen={showConfirmation}
+//                 onConfirm={handleConfirmProceed}
+//                 onCancel={handleCancelProceed}
+//                 title="Proceed to Selfie Verification"
+//                 message="Are you sure you want to proceed to selfie verification? Please confirm your uploaded documents are correct."
+//                 extractedData={Object.values(extractedData)[0]}
+//             />
+//         </div>
+//     );
+// };
 const DocumentUpload = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -50,6 +739,7 @@ const DocumentUpload = () => {
     if (!driverDetails) {
         return <div className="mobile-container">No data found</div>;
     }
+
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
     const pdfInputRef = useRef(null);
@@ -58,128 +748,157 @@ const DocumentUpload = () => {
     const [showPicker, setShowPicker] = useState(null);
     const [currentDocKey, setCurrentDocKey] = useState(null);
     const [speak, audioEnabled, toggleAudio] = usePageAudio();
-    const [showOCR, setShowOCR] = useState(false);
-    const [currentImage, setCurrentImage] = useState(null);
-    const [extractedData, setExtractedData] = useState({});
-    const [showConfirmation, setShowConfirmation] = useState(false);
-    const [loading, setloading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const sessionId = getSessionId();
-    useEffect(() => {
-        const welcomeText = "कृपया apne दस्तावेज़ अपलोड करें";
-        speak(welcomeText);
-    }, [speak, toggleAudio]);
 
-    /* ========================= */
-    /* OPEN PICKER */
-    /* ========================= */
+    useEffect(() => {
+        speak("कृपया अपने दस्तावेज़ अपलोड करें");
+    }, [speak, toggleAudio]);
 
     const openPicker = (key) => {
         setCurrentDocKey(key);
         setShowPicker(true);
     };
 
-    /* ========================= */
-    /* TRIGGER INPUT */
-    /* ========================= */
-
     const triggerFileInput = (type) => {
-        if (type === "camera") {
-            cameraInputRef.current?.click();
-        }
-        if (type === "gallery") {
-            galleryInputRef.current?.click();
-        }
-        if (type === "pdf") {
-            pdfInputRef.current?.click();
-        }
+        setShowPicker(null);
+        setTimeout(() => {
+            if (type === "camera") cameraInputRef.current?.click();
+            if (type === "gallery") galleryInputRef.current?.click();
+            if (type === "pdf") pdfInputRef.current?.click();
+        }, 300);
     };
 
-    /* ========================= */
-    /* HANDLE FILE */
-    /* ========================= */
-    // const handleFileSelect = (file) => {
+    // ✅ Upload single document immediately after selection
+    const uploadSingleDocument = async (key, file) => {
+        setDocs(prev => ({
+            ...prev,
+            [key]: {
+                ...prev[key],
+                uploading: true,
+                uploaded: false,
+                progress: 0,
+                error: null,
+            }
+        }));
 
-    //     if (!file || !currentDocKey) return;
+        const formData = new FormData();
+        formData.append("sessionId", sessionId);
+        formData.append("doNumber", driverDetails?.doNumber);
+        formData.append("documents", file);
+        formData.append("types", JSON.stringify([key]));
 
-    //     const allowedTypes = [
-    //         "image/jpeg",
-    //         ".heic",
-    //         "image/jpg",
-    //         "image/png",
-    //         "image/webp",
-    //         "image/avif",
-    //         "image/bmp",
-    //         "image/tiff",
-    //         "image/heic",
-    //         "image/heif",
-    //         "application/pdf",
-    //         "application/octet-stream"
-    //     ];
+        const MAX_RETRIES = 3;
+        let lastError = null;
 
-    //     if (!allowedTypes.includes(file.type)) {
-    //         toast.error("Only images or PDF allowed!!!!!");
-    //         return;
-    //     }
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                const res = await axios.post(
+                    `${API}/api/driver/upload-docs`,
+                    formData,
+                    {
+                        headers: { "Content-Type": "multipart/form-data" },
+                        timeout: 60000,
+                        onUploadProgress: (progressEvent) => {
+                            const percent = Math.round(
+                                (progressEvent.loaded * 100) / progressEvent.total
+                            );
+                            setDocs(prev => ({
+                                ...prev,
+                                [key]: {
+                                    ...prev[key],
+                                    progress: percent,
+                                    uploading: percent < 100,
+                                }
+                            }));
+                        }
+                    }
+                );
 
-    //     setShowPicker(null);
+                // ✅ Store OCR for this doc
+                const ocr = res.data?.data?.ocr;
+                if (ocr) {
+                    const existing = JSON.parse(sessionStorage.getItem("ocrData") || "{}");
+                    sessionStorage.setItem("ocrData", JSON.stringify({ ...existing, ...ocr }));
+                }
 
-    //     const preview =
-    //         file.type.startsWith("image/")
-    //             ? URL.createObjectURL(file)
-    //             : null;
+                setDocs(prev => ({
+                    ...prev,
+                    [key]: {
+                        ...prev[key],
+                        uploading: false,
+                        uploaded: true,
+                        progress: 100,
+                        error: null,
+                    }
+                }));
 
-    //     setDocs(prev => ({
-    //         ...prev,
-    //         [currentDocKey]: {
-    //             preview,
-    //             progress: 0,
-    //             uploading: false,
-    //             uploaded: false,
-    //             file
-    //         }
-    //     }));
-    // };
+                return; // ✅ success
+
+            } catch (err) {
+                lastError = err;
+                const status = err.response?.status;
+
+                // Don't retry on 4xx
+                if (status && status >= 400 && status < 500) break;
+
+                if (attempt < MAX_RETRIES) {
+                    await new Promise(r => setTimeout(r, 1000 * attempt));
+                }
+            }
+        }
+
+        // ✅ Failed after retries
+        let errorMsg = "Upload failed";
+        if (lastError?.code === "ECONNABORTED") errorMsg = "Timeout — try again";
+        else if (lastError?.code === "ERR_NETWORK") errorMsg = "Network error";
+        else if (lastError?.response?.status === 413) errorMsg = "File too large";
+        else errorMsg = lastError?.response?.data?.message || errorMsg;
+
+        setDocs(prev => ({
+            ...prev,
+            [key]: {
+                ...prev[key],
+                uploading: false,
+                uploaded: false,
+                progress: 0,
+                error: errorMsg,
+            }
+        }));
+
+        toast.error(`${key.toUpperCase()}: ${errorMsg}`);
+        speak(`${key} अपलोड विफल। कृपया दोबारा कोशिश करें।`);
+    };
 
     const handleFileSelect = (file) => {
-
         if (!file || !currentDocKey) return;
 
         const allowedMimeTypes = [
-            "image/jpeg",
-            "image/jpg",
-            "image/png",
-            "image/webp",
-            "image/avif",
-            "image/bmp",
-            "image/tiff",
-            "image/heic",
-            "image/heif",
-            "application/pdf",
-            "application/octet-stream" // fallback
+            "image/jpeg", "image/jpg", "image/png", "image/webp",
+            "image/avif", "image/bmp", "image/tiff",
+            "image/heic", "image/heif",
+            "application/pdf", "application/octet-stream"
         ];
-
         const allowedExtensions = [
             ".jpg", ".jpeg", ".png", ".webp", ".avif",
-            ".bmp", ".tiff",
-            ".heic", ".heif",
-            ".pdf"
+            ".bmp", ".tiff", ".heic", ".heif", ".pdf"
         ];
 
         const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
 
-        // ✅ FIX: handle HEIC (empty type case)
         if (
             (!file.type && allowedExtensions.includes(ext)) ||
             (allowedMimeTypes.includes(file.type) && allowedExtensions.includes(ext))
         ) {
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error("File too large — max 5MB");
+                return;
+            }
 
-            setShowPicker(null);
-
-            const preview =
-                file.type.startsWith("image/") && ext !== ".heic" && ext !== ".heif"
-                    ? URL.createObjectURL(file)
-                    : null; // ❌ HEIC preview not supported
+            const preview = file.type.startsWith("image/") && ext !== ".heic" && ext !== ".heif"
+                ? URL.createObjectURL(file)
+                : null;
 
             setDocs(prev => ({
                 ...prev,
@@ -188,337 +907,39 @@ const DocumentUpload = () => {
                     progress: 0,
                     uploading: false,
                     uploaded: false,
+                    error: null,
                     file
                 }
             }));
 
+            // ✅ Start upload immediately
+            uploadSingleDocument(currentDocKey, file);
+
         } else {
             toast.error("Only images or PDF allowed");
-            return;
         }
-    };
-    // const uploadAllDocuments = async () => {
-
-    //     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
-
-    //     const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
-
-    //     if (missingDocs.length) {
-    //         toast.error("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
-    //         speak("कृपया सभी ज़रूरी डॉक्यूमेंट्स अपलोड करें");
-    //         return;
-    //     }
-
-    //     const formData = new FormData();
-
-    //     formData.append("sessionId", sessionId);
-    //     formData.append("doNumber", driverDetails?.doNumber);
-
-    //     const types = [];
-
-    //     requiredDocs.forEach((key) => {
-
-    //         const file = docs[key].file;
-
-    //         formData.append("documents", file);
-    //         types.push(key);
-
-    //     });
-
-    //     formData.append("types", JSON.stringify(types));
-
-    //     try {
-    //         setloading(true);
-
-    //         const res = await axios.post(
-    //             `${API}/api/driver/upload-docs`,
-    //             formData,
-    //             {
-    //                 headers: {
-    //                     "Content-Type": "multipart/form-data"
-    //                 },
-    //                 onUploadProgress: (progressEvent) => {
-
-    //                     const percent = Math.round(
-    //                         (progressEvent.loaded * 100) / progressEvent.total
-    //                     );
-
-    //                     setDocs(prev => {
-    //                         const updated = { ...prev };
-
-    //                         requiredDocs.forEach(k => {
-    //                             if (updated[k]) {
-    //                                 updated[k].progress = percent;
-    //                                 updated[k].uploading = percent < 100;
-    //                                 updated[k].uploaded = percent === 100;
-    //                             }
-    //                         });
-
-    //                         return updated;
-    //                     });
-
-    //                 }
-    //             }
-    //         );
-
-    //         const ocr = res.data?.data?.ocr;
-
-    //         if (ocr) {
-    //             sessionStorage.setItem("ocrData", JSON.stringify(ocr));
-    //         }
-
-    //         toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
-    //         speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
-
-    //         navigate("/driver/doc-review");
-
-    //     } catch (error) {
-
-    //         console.error(error);
-
-    //         toast.error(
-    //             error.res?.data?.message || "Document upload failed"
-    //         );
-
-    //         speak(error.res?.data?.message || "Upload failed");
-
-    //     }
-    //     finally {
-    //         setloading(false);
-    //     }
-
-    // };
-
-
-
-
-    const MAX_RETRIES = 3;
-    const RETRY_DELAY = 1000;
-    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-    const uploadAllDocuments = async () => {
-        const requiredDocs = ["dl", "rc", "insurance", "fitness"];
-
-        // ✅ Validate all docs selected
-        const missingDocs = requiredDocs.filter(d => !docs[d]?.file);
-        if (missingDocs.length) {
-            const missingLabels = missingDocs.map(d =>
-                docTypes.find(dt => dt.key === d)?.label || d
-            ).join(", ");
-            toast.error(`कृपया यह दस्तावेज़ अपलोड करें: ${missingLabels}`);
-            speak(`कृपया यह दस्तावेज़ अपलोड करें: ${missingLabels}`);
-            return;
-        }
-
-        // ✅ Validate each file size (5MB max per file)
-        const oversizedDocs = requiredDocs.filter(d => docs[d]?.file?.size > 5 * 1024 * 1024);
-        if (oversizedDocs.length) {
-            const labels = oversizedDocs.map(d =>
-                docTypes.find(dt => dt.key === d)?.label || d
-            ).join(", ");
-            toast.error(`File too large (max 5MB): ${labels}`);
-            speak(`यह फ़ाइल बहुत बड़ी है: ${labels}`);
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("sessionId", sessionId);
-        formData.append("doNumber", driverDetails?.doNumber);
-
-        const types = [];
-        requiredDocs.forEach((key) => {
-            formData.append("documents", docs[key].file);
-            types.push(key);
-        });
-        formData.append("types", JSON.stringify(types));
-
-        // ✅ Reset progress for all docs
-        setDocs(prev => {
-            const updated = { ...prev };
-            requiredDocs.forEach(k => {
-                if (updated[k]) {
-                    updated[k].progress = 0;
-                    updated[k].uploading = true;
-                    updated[k].uploaded = false;
-                }
-            });
-            return updated;
-        });
-
-        try {
-            setloading(true);
-
-            let lastError = null;
-            let res = null;
-
-            // ✅ Retry logic
-            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-                try {
-                    res = await axios.post(
-                        `${API}/api/driver/upload-docs`,
-                        formData,
-                        {
-                            headers: { "Content-Type": "multipart/form-data" },
-                            timeout: 60000, // ✅ 60 seconds for 4 docs
-                            onUploadProgress: (progressEvent) => {
-                                const percent = Math.round(
-                                    (progressEvent.loaded * 100) / progressEvent.total
-                                );
-                                setDocs(prev => {
-                                    const updated = { ...prev };
-                                    requiredDocs.forEach(k => {
-                                        if (updated[k]) {
-                                            updated[k].progress = percent;
-                                            updated[k].uploading = percent < 100;
-                                            updated[k].uploaded = percent === 100;
-                                        }
-                                    });
-                                    return updated;
-                                });
-                            }
-                        }
-                    );
-
-                    break; // ✅ success — exit retry loop
-
-                } catch (err) {
-                    lastError = err;
-
-                    const status = err.response?.status;
-
-                    // ✅ Don't retry on client errors (4xx)
-                    if (status && status >= 400 && status < 500) {
-                        throw err;
-                    }
-
-                    // ✅ Retry on network/server errors
-                    if (attempt < MAX_RETRIES) {
-                        toast.warning(`Upload failed, retrying... (${attempt}/${MAX_RETRIES})`);
-
-                        // Reset progress on retry
-                        setDocs(prev => {
-                            const updated = { ...prev };
-                            requiredDocs.forEach(k => {
-                                if (updated[k]) {
-                                    updated[k].progress = 0;
-                                }
-                            });
-                            return updated;
-                        });
-
-                        await sleep(RETRY_DELAY * attempt); // exponential backoff
-                    }
-                }
-            }
-
-            if (!res) throw lastError;
-
-            // ✅ Store OCR data
-            const ocr = res.data?.data?.ocr;
-            if (ocr) {
-                sessionStorage.setItem("ocrData", JSON.stringify(ocr));
-            } else {
-                console.warn("No OCR data received");
-            }
-
-            toast.success("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं");
-            speak("डॉक्यूमेंट्स सफलतापूर्वक अपलोड हो गए हैं, कृपया डिटेल्स चेक करें और आगे बढ़ें");
-
-            navigate("/driver/doc-review");
-
-        } catch (error) {
-            console.error("Upload error:", error);
-
-            // ✅ Reset all doc upload states on failure
-            setDocs(prev => {
-                const updated = { ...prev };
-                requiredDocs.forEach(k => {
-                    if (updated[k]) {
-                        updated[k].progress = 0;
-                        updated[k].uploading = false;
-                        updated[k].uploaded = false;
-                    }
-                });
-                return updated;
-            });
-
-            // ✅ Specific error messages
-            let message = "Document upload failed";
-
-            if (error.code === "ECONNABORTED") {
-                message = "Upload timed out — please try again";
-                speak("अपलोड में बहुत समय लग रहा है। कृपया दोबारा कोशिश करें।");
-            } else if (error.code === "ERR_NETWORK") {
-                message = "Network error — please check your connection";
-                speak("नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।");
-            } else if (error.response?.status === 413) {
-                message = "Files too large — please use smaller images";
-                speak("फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।");
-            } else if (error.response?.status === 401) {
-                message = "Session expired — please restart";
-                speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
-            } else if (error.response?.status === 400) {
-                message = error.response?.data?.message || "Invalid request";
-                speak(message);
-            } else {
-                message = error.response?.data?.message || message;
-                speak(message);
-            }
-
-            toast.error(message);
-
-        } finally {
-            setloading(false);
-        }
-    };
-
-    const handleOCRComplete = (ocrData) => {
-        // Store extracted data
-        setExtractedData(prev => ({
-            ...prev,
-            [currentDocKey]: ocrData
-        }));
-
-        setShowOCR(false);
-
-        // Now upload the file after OCR confirmation
-        const docState = docs[currentDocKey];
-        if (docState && docState.file) {
-            uploadAllDocuments(currentDocKey, docState.file);
-        }
-    };
-
-    const handleOCRCancel = () => {
-        setShowOCR(false);
-        setCurrentImage(null);
-        // Remove the temporary document state
-        setDocs(prev => {
-            const newDocs = { ...prev };
-            delete newDocs[currentDocKey];
-            return newDocs;
-        });
     };
 
     const onInputChange = (e) => {
         const file = e.target.files[0];
-        handleFileSelect(file);
+        if (file) handleFileSelect(file);
         e.target.value = "";
     };
 
-    const handleNextClick = () => {
-        setShowConfirmation(true);
+    // ✅ Retry failed doc
+    const retryUpload = (key) => {
+        const file = docs[key]?.file;
+        if (file) uploadSingleDocument(key, file);
     };
 
-    const handleConfirmProceed = () => {
-        setShowConfirmation(false);
-        navigate("/driver/selfie");
-    };
+    // ✅ All uploaded = no uploading + all have uploaded:true
+    const allUploaded = docTypes.every(d => docs[d.key]?.uploaded === true);
+    const anyUploading = docTypes.some(d => docs[d.key]?.uploading === true);
 
-    const handleCancelProceed = () => {
-        setShowConfirmation(false);
+    const handleNext = () => {
+        if (!allUploaded) return;
+        navigate("/driver/doc-review");
     };
-
-    const allSelected = docTypes.every(d => docs[d.key]?.file);
 
     return (
         <div className="mobile-container">
@@ -533,8 +954,8 @@ const DocumentUpload = () => {
                 />
 
                 <InfoBanner
-                    text="Tap below to upload"
-                    textHi="अपलोड करने के लिए नीचे टैप करें"
+                    text="Tap each document to upload"
+                    textHi="प्रत्येक दस्तावेज़ अपलोड करने के लिए टैप करें"
                 />
 
                 {/* DOCUMENT GRID */}
@@ -547,11 +968,27 @@ const DocumentUpload = () => {
                             <button
                                 key={doc.key}
                                 onClick={() => openPicker(doc.key)}
-                                className="relative card-upload"
+                                disabled={state?.uploading}
+                                className="relative card-upload disabled:opacity-70"
+                                style={{
+                                    border: state?.error
+                                        ? "1.5px solid hsl(var(--destructive))"
+                                        : state?.uploaded
+                                            ? "1.5px solid hsl(var(--success))"
+                                            : undefined
+                                }}
                             >
+                                {/* ✅ Success check */}
                                 {state?.uploaded && (
                                     <div className="absolute top-2 right-2 w-5 h-5 bg-success rounded-full flex items-center justify-center">
                                         <Check className="w-3 h-3 text-success-foreground" />
+                                    </div>
+                                )}
+
+                                {/* ✅ Error indicator */}
+                                {state?.error && (
+                                    <div className="absolute top-2 right-2 w-5 h-5 bg-destructive rounded-full flex items-center justify-center">
+                                        <span className="text-white text-xs font-bold">!</span>
                                     </div>
                                 )}
 
@@ -565,108 +1002,109 @@ const DocumentUpload = () => {
                                     <Icon className="w-8 h-8 text-muted-foreground mb-2" />
                                 )}
 
-                                <span className="text-sm font-medium">
-                                    {doc.label}
-                                </span>
+                                <span className="text-sm font-medium">{doc.label}</span>
 
+                                {/* ✅ Upload progress bar */}
                                 {state?.uploading && (
                                     <div className="w-full mt-2">
                                         <div className="h-1 bg-muted rounded-full overflow-hidden">
                                             <div
                                                 className="h-full bg-primary transition-all"
-                                                style={{
-                                                    width: `${state.progress}%`,
-                                                }}
+                                                style={{ width: `${state.progress}%` }}
                                             />
                                         </div>
                                         <p className="text-xs mt-1 text-muted-foreground">
-                                            {state.progress}%
+                                            Uploading {state.progress}%
                                         </p>
                                     </div>
                                 )}
 
-                                {state?.file?.type === "application/pdf" && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        PDF Selected
+                                {/* ✅ Uploaded confirmation */}
+                                {state?.uploaded && (
+                                    <p className="text-xs mt-1" style={{ color: "hsl(var(--success))" }}>
+                                        ✓ Uploaded
                                     </p>
+                                )}
+
+                                {/* ✅ Error with retry */}
+                                {state?.error && (
+                                    <div className="w-full mt-1">
+                                        <p className="text-xs text-destructive">{state.error}</p>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                retryUpload(doc.key);
+                                            }}
+                                            className="text-xs text-primary mt-0.5 underline"
+                                        >
+                                            Retry
+                                        </button>
+                                    </div>
+                                )}
+
+                                {state?.file?.type === "application/pdf" && !state?.uploading && !state?.uploaded && (
+                                    <p className="text-xs text-muted-foreground mt-1">PDF Selected</p>
                                 )}
                             </button>
                         );
                     })}
                 </div>
+
+                {/* ✅ Overall progress indicator */}
+                {anyUploading && (
+                    <div className="mt-4 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            Uploading documents... please wait
+                        </p>
+                    </div>
+                )}
             </div>
 
             <div className="page-bottom">
-                {
-                    !loading ? (<button
-                        onClick={uploadAllDocuments}
-                        disabled={!allSelected}
-                        className="btn-primary-full disabled:opacity-50"
-                    >
-                        Next / आगे बढ़ें →
-                    </button>) : (
-                        <Button
-                            variant="primary"
-                            disabled
-                            className="btn-primary-full "
-                        >Uploading...
-
-                            <Spinner className="mr-2" data-icon="inline-start" />
-                        </Button>
-                    )
-                }
-
+                <button
+                    onClick={handleNext}
+                    disabled={!allUploaded || anyUploading}
+                    className="btn-primary-full disabled:opacity-50"
+                >
+                    {anyUploading
+                        ? `Uploading... (${docTypes.filter(d => docs[d.key]?.uploaded).length}/${docTypes.length})`
+                        : allUploaded
+                            ? "Next / आगे बढ़ें →"
+                            : `Select all documents (${docTypes.filter(d => docs[d.key]?.uploaded).length}/${docTypes.length})`
+                    }
+                </button>
             </div>
 
             {/* SELECT OPTION SHEET */}
             {showPicker && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center">
-
-                    {/* BACKDROP */}
                     <div
                         className="absolute inset-0"
                         style={{ background: "hsl(var(--foreground) / 0.4)" }}
                         onClick={() => setShowPicker(null)}
                     />
-
-                    {/* SHEET */}
                     <div
-                        className="relative w-full max-w-md rounded-t-3xl p-6 shadow-2xl transition-all duration-300 animate-[slideUp_0.25s_ease-out]"
+                        className="relative w-full max-w-md rounded-t-3xl p-6 shadow-2xl animate-[slideUp_0.25s_ease-out]"
                         style={{ background: "hsl(var(--card))" }}
                     >
-                        <h3
-                            className="text-lg font-semibold text-center mb-1"
-                            style={{ color: "hsl(var(--foreground))" }}
-                        >
+                        <h3 className="text-lg font-semibold text-center mb-1" style={{ color: "hsl(var(--foreground))" }}>
                             Select Option / विकल्प चुनें
                         </h3>
 
                         <div className="grid grid-cols-3 gap-4 mt-5">
-
-                            <button
-                                onClick={() => triggerFileInput("camera")}
-                                className="flex flex-col items-center gap-2"
-                            >
+                            <button onClick={() => triggerFileInput("camera")} className="flex flex-col items-center gap-2">
                                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-muted">
                                     <Camera className="w-6 h-6" />
                                 </div>
                                 <span className="text-xs">Take Photo</span>
                             </button>
-
-                            <button
-                                onClick={() => triggerFileInput("pdf")}
-                                className="flex flex-col items-center gap-2"
-                            >
+                            <button onClick={() => triggerFileInput("pdf")} className="flex flex-col items-center gap-2">
                                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-muted">
                                     <Upload className="w-6 h-6" />
                                 </div>
                                 <span className="text-xs">Upload PDF</span>
                             </button>
-
-                            <button
-                                onClick={() => triggerFileInput("gallery")}
-                                className="flex flex-col items-center gap-2"
-                            >
+                            <button onClick={() => triggerFileInput("gallery")} className="flex flex-col items-center gap-2">
                                 <div className="w-14 h-14 rounded-full flex items-center justify-center bg-muted">
                                     <Image className="w-6 h-6" />
                                 </div>
@@ -686,49 +1124,9 @@ const DocumentUpload = () => {
             )}
 
             {/* Hidden Inputs */}
-            <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                ref={cameraInputRef}
-                onChange={onInputChange}
-                className="hidden"
-            />
-
-            <input
-                type="file"
-                accept="image/*"
-                ref={galleryInputRef}
-                onChange={onInputChange}
-                className="hidden"
-            />
-
-            <input
-                type="file"
-                accept="application/pdf"
-                ref={pdfInputRef}
-                onChange={onInputChange}
-                className="hidden"
-            />
-
-            {/* OCR Processor Modal */}
-            {/* {showOCR && (
-                <OCRProcessor
-                    image={currentImage}
-                    // onOCRComplete={handleOCRComplete}
-                    onCancel={handleOCRCancel}
-                />
-            )} */}
-
-            {/* Confirmation Dialog */}
-            <ConfirmationDialog
-                isOpen={showConfirmation}
-                onConfirm={handleConfirmProceed}
-                onCancel={handleCancelProceed}
-                title="Proceed to Selfie Verification"
-                message="Are you sure you want to proceed to selfie verification? Please confirm your uploaded documents are correct."
-                extractedData={Object.values(extractedData)[0]}
-            />
+            <input type="file" accept="image/*" capture="environment" ref={cameraInputRef} onChange={onInputChange} className="hidden" />
+            <input type="file" accept="image/*" ref={galleryInputRef} onChange={onInputChange} className="hidden" />
+            <input type="file" accept="application/pdf" ref={pdfInputRef} onChange={onInputChange} className="hidden" />
         </div>
     );
 };

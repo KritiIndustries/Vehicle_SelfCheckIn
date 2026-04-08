@@ -1,202 +1,3 @@
-// import { useState } from "react";
-// import { Truck, Clock, CheckCircle, XCircle, LogOut, Eye, ChevronRight } from "lucide-react";
-// import AppHeader from "@/components/AppHeader";
-
-// const mockVehicles = [
-//     { id: "1", token: 24, vehicleNo: "MH 04 AB 1234", driverName: "Rajesh Kumar", doNumber: "DO-784512", rfid: "RF-9988", status: "waiting" },
-//     { id: "2", token: 25, vehicleNo: "MP 09 CD 5678", driverName: "Suresh Yadav", doNumber: "DO-784513", rfid: "RF-9989", status: "waiting" },
-//     { id: "3", token: 23, vehicleNo: "RJ 14 EF 9012", driverName: "Anil Sharma", doNumber: "DO-784510", rfid: "RF-9987", status: "inside", entryTime: "10:30 AM" },
-//     { id: "4", token: 22, vehicleNo: "GJ 05 GH 3456", driverName: "Vikram Singh", doNumber: "DO-784509", rfid: "RF-9986", status: "loading", entryTime: "09:45 AM" },
-// ];
-
-// const statusConfig = {
-//     waiting: { label: "Waiting", class: "status-waiting", icon: Clock },
-//     "checked-in": { label: "Checked In", class: "status-checked-in", icon: CheckCircle },
-//     inside: { label: "Inside", class: "status-inside", icon: Truck },
-//     loading: { label: "Loading", class: "status-inside", icon: Truck },
-//     completed: { label: "Completed", class: "status-checked-in", icon: CheckCircle },
-// };
-
-// const GuardDashboard = () => {
-//     const [vehicles, setVehicles] = useState(mockVehicles);
-//     const [selectedVehicle, setSelectedVehicle] = useState(null);
-//     const [activeTab, setActiveTab] = useState("queue");
-//     const [rejectRemark, setRejectRemark] = useState("");
-//     const [showRejectModal, setShowRejectModal] = useState(false);
-
-//     const queueVehicles = vehicles.filter((v) => v.status === "waiting" || v.status === "checked-in");
-//     const insideVehicles = vehicles.filter((v) => v.status === "inside" || v.status === "loading");
-
-//     const handleCheckIn = (id) => {
-//         setVehicles((prev) => prev.map((v) => v.id === id ? { ...v, status: "inside", entryTime: new Date().toLocaleTimeString() } : v));
-//         setSelectedVehicle(null);
-//     };
-
-//     const handleCheckOut = (id) => {
-//         setVehicles((prev) => prev.map((v) => v.id === id ? { ...v, status: "completed" } : v));
-//         setSelectedVehicle(null);
-//     };
-
-//     const handleReject = (id) => {
-//         if (!rejectRemark) return;
-//         setVehicles((prev) => prev.filter((v) => v.id !== id));
-//         setShowRejectModal(false);
-//         setSelectedVehicle(null);
-//         setRejectRemark("");
-//     };
-
-//     const displayed = activeTab === "queue" ? queueVehicles : insideVehicles;
-
-//     return (
-//         <div className="mobile-container">
-//             <AppHeader showAudio={false} />
-//             <div className="px-5 pt-4 pb-2">
-//                 <h1 className="text-xl font-bold text-foreground">Guard Dashboard</h1>
-//                 <p className="text-sm text-muted-foreground">गार्ड डैशबोर्ड</p>
-//             </div>
-
-//             <div className="grid grid-cols-3 gap-3 px-5 mb-4">
-//                 <div className="bg-warning/10 rounded-xl p-3 text-center">
-//                     <span className="text-2xl font-bold text-warning">{queueVehicles.length}</span>
-//                     <p className="text-xs text-muted-foreground mt-1">Queue</p>
-//                 </div>
-//                 <div className="bg-success/10 rounded-xl p-3 text-center">
-//                     <span className="text-2xl font-bold text-success">{insideVehicles.length}</span>
-//                     <p className="text-xs text-muted-foreground mt-1">Inside</p>
-//                 </div>
-//                 <div className="bg-accent/10 rounded-xl p-3 text-center">
-//                     <span className="text-2xl font-bold text-accent">
-//                         {vehicles.filter((v) => v.status === "completed").length}
-//                     </span>
-//                     <p className="text-xs text-muted-foreground mt-1">Done</p>
-//                 </div>
-//             </div>
-
-//             <div className="flex px-5 gap-2 mb-3">
-//                 <button
-//                     onClick={() => setActiveTab("queue")}
-//                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "queue" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-//                         }`}
-//                 >
-//                     Queue ({queueVehicles.length})
-//                 </button>
-//                 <button
-//                     onClick={() => setActiveTab("inside")}
-//                     className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${activeTab === "inside" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-//                         }`}
-//                 >
-//                     Inside ({insideVehicles.length})
-//                 </button>
-//             </div>
-
-//             <div className="px-5 space-y-3 pb-6 overflow-auto flex-1">
-//                 {displayed.map((v) => {
-//                     const sc = statusConfig[v.status];
-//                     return (
-//                         <button
-//                             key={v.id}
-//                             onClick={() => setSelectedVehicle(v)}
-//                             className="w-full bg-card border border-border rounded-xl p-4 flex items-center gap-3 text-left hover:border-primary/30 transition-all"
-//                         >
-//                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-//                                 <span className="text-sm font-bold text-primary">#{v.token}</span>
-//                             </div>
-//                             <div className="flex-1 min-w-0">
-//                                 <p className="text-sm font-semibold text-foreground truncate">{v.vehicleNo}</p>
-//                                 <p className="text-xs text-muted-foreground">{v.driverName}</p>
-//                             </div>
-//                             <span className={`status-badge ${sc.class}`}>{sc.label}</span>
-//                             <ChevronRight className="w-4 h-4 text-muted-foreground" />
-//                         </button>
-//                     );
-//                 })}
-//                 {displayed.length === 0 && (
-//                     <div className="text-center py-12 text-muted-foreground">
-//                         <p className="text-sm">No vehicles in this category</p>
-//                     </div>
-//                 )}
-//             </div>
-
-//             {selectedVehicle && (
-//                 <div className="fixed inset-0 bg-foreground/40 z-50 flex items-end justify-center">
-//                     <div className="bg-card w-full max-w-md rounded-t-2xl max-h-[80vh] overflow-auto">
-//                         <div className="p-6">
-//                             <div className="flex justify-between items-start mb-4">
-//                                 <div>
-//                                     <h2 className="text-lg font-bold text-foreground">{selectedVehicle.vehicleNo}</h2>
-//                                     <p className="text-sm text-muted-foreground">{selectedVehicle.driverName}</p>
-//                                 </div>
-//                                 <button onClick={() => setSelectedVehicle(null)} className="text-muted-foreground text-xl">✕</button>
-//                             </div>
-
-//                             <div className="space-y-3 mb-6">
-//                                 {[
-//                                     { label: "Token", value: `#${selectedVehicle.token}` },
-//                                     { label: "DO Number", value: selectedVehicle.doNumber },
-//                                     { label: "RFID", value: selectedVehicle.rfid },
-//                                     { label: "Status", value: statusConfig[selectedVehicle.status].label },
-//                                     ...(selectedVehicle.entryTime ? [{ label: "Entry Time", value: selectedVehicle.entryTime }] : []),
-//                                 ].map((item) => (
-//                                     <div key={item.label} className="flex justify-between py-2 border-b border-border">
-//                                         <span className="text-sm text-muted-foreground">{item.label}</span>
-//                                         <span className="text-sm font-semibold text-foreground">{item.value}</span>
-//                                     </div>
-//                                 ))}
-//                             </div>
-
-//                             <div className="space-y-3">
-//                                 {selectedVehicle.status === "waiting" && (
-//                                     <>
-//                                         <button onClick={() => handleCheckIn(selectedVehicle.id)} className="btn-primary-full">
-//                                             <CheckCircle className="w-4 h-4" /> Approve Entry / प्रवेश स्वीकृत
-//                                         </button>
-//                                         <button onClick={() => setShowRejectModal(true)} className="w-full bg-destructive text-destructive-foreground py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2">
-//                                             <XCircle className="w-4 h-4" /> Reject / अस्वीकार
-//                                         </button>
-//                                     </>
-//                                 )}
-//                                 {(selectedVehicle.status === "inside" || selectedVehicle.status === "loading") && (
-//                                     <button onClick={() => handleCheckOut(selectedVehicle.id)} className="btn-primary-full">
-//                                         <LogOut className="w-4 h-4" /> Check Out / चेक आउट
-//                                     </button>
-//                                 )}
-//                             </div>
-//                         </div>
-//                     </div>
-//                 </div>
-//             )}
-
-//             {showRejectModal && selectedVehicle && (
-//                 <div className="fixed inset-0 bg-foreground/60 z-[60] flex items-center justify-center p-5">
-//                     <div className="bg-card rounded-2xl p-6 w-full max-w-sm">
-//                         <h3 className="text-lg font-bold text-foreground mb-1">Reject Vehicle</h3>
-//                         <p className="text-sm text-muted-foreground mb-4">Please provide a reason / कृपया कारण दें</p>
-//                         <textarea
-//                             value={rejectRemark}
-//                             onChange={(e) => setRejectRemark(e.target.value)}
-//                             placeholder="Enter reason for rejection..."
-//                             className="w-full px-4 py-3 border border-input rounded-xl bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring h-24 resize-none"
-//                         />
-//                         <div className="flex gap-3 mt-4">
-//                             <button onClick={() => { setShowRejectModal(false); setRejectRemark(""); }} className="flex-1 btn-outline-primary">
-//                                 Cancel
-//                             </button>
-//                             <button
-//                                 onClick={() => handleReject(selectedVehicle.id)}
-//                                 disabled={!rejectRemark}
-//                                 className="flex-1 bg-destructive text-destructive-foreground py-3 rounded-xl font-semibold disabled:opacity-50"
-//                             >
-//                                 Confirm Reject
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </div>
-//             )}
-//         </div>
-//     );
-// };
-
-// export default GuardDashboard;
 
 import { useEffect, useState } from "react";
 import {
@@ -217,6 +18,7 @@ import axios from "axios";
 import formatApiDate from "@/services/formatApiDate.service";
 import { set } from "date-fns";
 import { Loader2 } from "lucide-react";
+import CallButton from "../driver/components/CallButton";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 export default function GuardDashboard() {
@@ -228,6 +30,8 @@ export default function GuardDashboard() {
     const [loading, setLoading] = useState(true);
     const [showImageModal, setShowImageModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
+    const [viewedDocs, setViewedDocs] = useState(new Set())
+    const [documents, setDocuments] = useState([]);
 
     const fetchVehicles = async () => {
         try {
@@ -244,6 +48,7 @@ export default function GuardDashboard() {
                 documents: item.Documents,
                 Token: item.Token,
                 Zgp: item.Zgp,
+                Mobile: item.Mobile,
             }));
 
             setVehicles(formatted);
@@ -310,12 +115,31 @@ export default function GuardDashboard() {
             setActionLoading(null);
         }
     };
+    // ✅ Reset viewed docs when a new vehicle is selected
+    useEffect(() => {
+        setViewedDocs(new Set());
+    }, [selectedVehicle?.id]);
+    // ✅ Mark doc as viewed
+    const handleViewDoc = (docType, url) => {
+        setViewedDocs(prev => new Set([...prev, docType]));
+        window.open(url, "_blank");
+    };
+    // ✅ All 5 docs viewed?
+    const allDocsViewed = selectedVehicle?.documents?.length > 0 &&
+        selectedVehicle.documents.every(doc => viewedDocs.has(doc.Doc_Type));
+
+    const handleDocumentClick = (documents) => {
+        setDocuments(...documents); 1
+        if (documents.length === 5) return setViewingDocuments(true);
+        return
+    }
 
     const displayed = activeTab === "queue" ? queueVehicles : insideVehicles;
 
     useEffect(() => {
         fetchVehicles();
     }, []);
+
     return (
         <div className="mobile-container">
             <AppHeader showAudio={false} showLogOut={true} />
@@ -339,7 +163,7 @@ export default function GuardDashboard() {
             {/* STATS */}
             <div className="grid grid-cols-3 gap-3 px-5 mb-4 shrink-0">
                 <StatCard
-                    label="Queue"
+                    label="Reported In"
                     value={queueVehicles.length}
                     color="--warning"
                 />
@@ -348,11 +172,11 @@ export default function GuardDashboard() {
                     value={insideVehicles.length}
                     color="--success"
                 />
-                <StatCard
+                {/* <StatCard
                     label="Done"
                     value={vehicles.filter((v) => v.status === "CheckedOut").length}
                     color="--accent"
-                />
+                /> */}
             </div>
 
             {/* TABS */}
@@ -459,8 +283,9 @@ export default function GuardDashboard() {
                                     className="text-sm"
                                     style={{ color: "hsl(var(--muted-foreground))" }}
                                 >
-                                    {selectedVehicle.driverName}
+                                    {selectedVehicle.driverName} <CallButton phoneNumber={selectedVehicle.Mobile} label={`${selectedVehicle.Mobile}`} />
                                 </p>
+
                             </div>
 
                             <button
@@ -514,18 +339,9 @@ export default function GuardDashboard() {
                                 </button>
                             )}
 
-                        {selectedVehicle.status === "waiting" && (
+                        {/* {selectedVehicle.status === "waiting" && (
                             <>
-                                {/* <button
-                                    onClick={() => handleCheckIn(selectedVehicle.id)}
-                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3"
-                                    style={{
-                                        background: "hsl(var(--primary))",
-                                        color: "hsl(var(--primary-foreground))",
-                                    }}
-                                >
-                                    Approve Entry
-                                </button> */}
+                              
                                 <button
                                     onClick={() => handleCheckIn(selectedVehicle.id)}
                                     disabled={actionLoading === `checkin-${selectedVehicle.id}`}
@@ -544,9 +360,9 @@ export default function GuardDashboard() {
                                         "Approve Entry"
                                     )}
                                 </button>
-                                {//TODO: add REJECT state}}
-                                }
-                                {/* <button
+                                //TODO: add REJECT state
+                                
+                                <button
                                     onClick={() => setShowRejectModal(true)}
                                     className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
                                     style={{
@@ -555,7 +371,34 @@ export default function GuardDashboard() {
                                     }}
                                 >
                                     Reject
-                                </button> */}
+                                </button> 
+                            </>
+                        )} */}
+                        {selectedVehicle.status === "waiting" && (
+                            <>
+                                <button
+                                    onClick={() => handleCheckIn(selectedVehicle.id)}
+                                    disabled={
+                                        actionLoading === `checkin-${selectedVehicle.id}` ||
+                                        !allDocsViewed   // ✅ blocked until all docs viewed
+                                    }
+                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style={{
+                                        background: "hsl(var(--primary))",
+                                        color: "hsl(var(--primary-foreground))",
+                                    }}
+                                >
+                                    {actionLoading === `checkin-${selectedVehicle.id}` ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Processing...
+                                        </>
+                                    ) : !allDocsViewed ? (
+                                        `View all docs first (${viewedDocs.size}/${selectedVehicle.documents?.length})`
+                                    ) : (
+                                        "Approve Entry"
+                                    )}
+                                </button>
                             </>
                         )}
 
@@ -687,7 +530,7 @@ export default function GuardDashboard() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        {/* <div className="grid grid-cols-2 gap-3">
                             {selectedVehicle.documents.map((doc) => (
                                 <div key={doc.Id} className="space-y-1">
                                     <div
@@ -723,7 +566,69 @@ export default function GuardDashboard() {
                                     </div>
                                 </div>
                             ))}
+                        </div> */}
+                        <div className="grid grid-cols-2 gap-3">
+                            {selectedVehicle.documents.map((doc) => {
+                                const isViewed = viewedDocs.has(doc.Doc_Type);
+                                const docUrl = `${API}/api/guard/image/${doc.Image_Path}`;
+
+                                return (
+                                    <div key={doc.Id} className="space-y-1">
+                                        <div
+                                            className="w-full overflow-hidden rounded-xl border"
+                                            style={{
+                                                borderColor: isViewed
+                                                    ? "hsl(var(--success))"      // ✅ green border if viewed
+                                                    : "hsl(var(--border))",
+                                            }}
+                                        >
+                                            <div className="flex items-center justify-between px-2 pt-1">
+                                                <p
+                                                    className="text-xs font-medium uppercase"
+                                                    style={{ color: "hsl(var(--muted-foreground))" }}
+                                                >
+                                                    {doc.Doc_Type}
+                                                </p>
+                                                {/* ✅ Green check if viewed */}
+                                                {isViewed && (
+                                                    <span style={{ color: "hsl(var(--success))", fontSize: 14 }}>✓</span>
+                                                )}
+                                            </div>
+
+                                            <div className="p-2 text-center">
+                                                <img
+                                                    src={docUrl}
+                                                    alt={doc.Doc_Type}
+                                                    className="w-full h-32 object-cover rounded"
+                                                />
+                                                <button
+                                                    onClick={() => handleViewDoc(doc.Doc_Type, docUrl)}
+                                                    className="w-full mt-1 py-1 rounded text-white text-xs font-medium"
+                                                    style={{
+                                                        background: isViewed
+                                                            ? "hsl(var(--success))"   // ✅ green if already viewed
+                                                            : "#2563eb",
+                                                    }}
+                                                >
+                                                    {isViewed ? "✓ Viewed" : "View"}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
+
+                        {/* ✅ Show how many docs remaining */}
+                        {!allDocsViewed && (
+                            <p
+                                className="text-xs text-center mt-2 mb-3"
+                                style={{ color: "hsl(var(--muted-foreground))" }}
+                            >
+                                View all documents to enable approval
+                                ({viewedDocs.size}/{selectedVehicle.documents.length} viewed)
+                            </p>
+                        )}
                     </div>
                 </div>
             )}

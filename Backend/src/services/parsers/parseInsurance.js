@@ -184,7 +184,40 @@ const parseInsurance = (lines) => {
             break;
         }
     }
+    // ✅ 2.5 HANDLE RC STYLE "INSURANCE VALID UPTO"
+    if (!expiryDate) {
+        for (let i = 0; i < normalized.length; i++) {
 
+            const line = normalized[i];
+
+            // Match "INSURANCE VALID UPTO"
+            if (/INSURANCE\s+VALID\s+UPTO/i.test(line)) {
+
+                const nextLine = normalized[i + 1] || "";
+
+                // Match formats like 30-Mar-2026 or 30/03/2026
+                const match = nextLine.match(/\d{1,2}[-\/][A-Z]{3}[-\/]\d{4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/i);
+
+                if (match) {
+                    expiryDate = convertToSqlDate(match[0]);
+                    break;
+                }
+            }
+
+            // Handle case where "UPTO" comes in next line (your OCR case)
+            if (/INSURANCE\s+VALID/i.test(line) && /UPTO/i.test(normalized[i + 1] || "")) {
+
+                const dateLine = normalized[i + 2] || "";
+
+                const match = dateLine.match(/\d{1,2}[-\/][A-Z]{3}[-\/]\d{4}|\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/i);
+
+                if (match) {
+                    expiryDate = convertToSqlDate(match[0]);
+                    break;
+                }
+            }
+        }
+    }
     // ✅ 3. FALLBACK MAX DATE
     if (!expiryDate) {
         let allDates = [];

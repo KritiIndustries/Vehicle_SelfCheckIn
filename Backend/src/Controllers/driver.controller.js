@@ -528,3 +528,76 @@ export const validatePage = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, entry, "Details found"));
 })
+export const uploadSingleDocument = asyncHandler(async (req, res) => {
+    const { sessionId, doNumber, type } = req.body;
+
+    if (!sessionId || !doNumber || !type) {
+        throw new ApiError(400, "sessionId, doNumber, type required");
+    }
+
+    if (!req.file) {
+        throw new ApiError(400, "No file uploaded");
+    }
+
+    try {
+        const file = req.file;
+        // ✅ 1. GET OLD RECORD (before overwrite)
+        const existingDoc = await prisma.driver_Temp_Upload.findUnique({
+            where: {
+                Session_Id_Doc_Type: {
+                    Session_Id: sessionId,
+                    Doc_Type: type,
+                },
+            },
+        });
+
+
+        // ✅ 2. UPLOAD NEW FILE FIRST (SAFE)
+        const url = await uploadToS3(file, doNumber, type);
+
+        // ✅ 3. UPSERT DB
+        await prisma.driver_Temp_Upload.upsert({
+            where: {
+                Session_Id_Doc_Type: {
+                    Session_Id: sessionId,
+                    Doc_Type: type,
+                },
+            },
+            update: {
+                Image_Path: url,
+            },
+            create: {
+                Session_Id: sessionId,
+                Doc_Type: type,
+                Image_Path: url,
+                Is_Selfie: false,
+            },
+        });
+
+        // ✅ 4. DELETE OLD FILE AFTER SUCCESS
+        if (existingDoc?.Image_Path) {
+            await deleteFromS3(existingDoc.Image_Path);
+        }
+
+        // ✅ 5. OCR
+        let lines = [];
+
+        if (type !== "selfie") {
+            if (file.mimetype.startsWith("image/")) {
+                lines = await extractTextFromS3Url(url);
+            } else if (file.mimetype === "application/pdf") {
+                lines = await extractTextFromPdf(url);
+            }
+        }
+
+        const fields = extractFieldsFromLines(lines, type);
+
+        return res.json(new ApiResponse(200, {
+            file: { type, url },
+            ocr: { lines, fields }
+        }, `${type} uploaded successfully`));
+
+    } catch (error) {
+        throw new ApiError(500, `${type} upload failed: ${error.message}`);
+    }
+});
