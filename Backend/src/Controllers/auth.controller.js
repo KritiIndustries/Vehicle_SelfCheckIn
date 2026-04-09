@@ -91,7 +91,7 @@ export const verifyOtp = asyncHandler(async (req, res) => {
             phone: guard.Mobile
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "8h" }
     );
 
     return res.status(200).json(new ApiResponse(200, { token }, "Login successful"));

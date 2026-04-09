@@ -161,7 +161,7 @@ export default function GuardDashboard() {
             </div>
 
             {/* STATS */}
-            <div className="grid grid-cols-3 gap-3 px-5 mb-4 shrink-0">
+            <div className="grid grid-cols-2 gap-2 px-5 mb-4 shrink-0">
                 <StatCard
                     label="Reported In"
                     value={queueVehicles.length}

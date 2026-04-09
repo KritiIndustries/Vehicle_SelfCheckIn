@@ -6,6 +6,7 @@ import { sendSMS } from "../utils/sendSms.js";
 import crypto from "crypto";
 import axios from "axios";
 import fetchCsrfToken from "../services/fetchCsrfToken.service.js";
+import { deleteFromS3, uploadToS3 } from "../services/s3.service.js";
 
 // ✅ Helper — get IST date object from any Date
 const toIST = (d) => {
@@ -257,3 +258,75 @@ export const checkoutVehicle = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, updated, "Checkout saved"));
 });
+export const uploadNumberPlate = asyncHandler(async (req, res) => {
+    const id = Number(req.body.id);  // ✅ convert to number
+
+    if (!id || !Number.isFinite(id)) {
+        throw new ApiError(400, "Valid checkin id is required");
+    }
+
+    if (!req.file) {
+        throw new ApiError(400, "No file uploaded");
+    }
+
+    // ✅ Check checkin exists and is in correct status
+    const checkin = await prisma.driver_Checkin.findUnique({
+        where: { Id: id },
+    });
+    console.log("Driver Details", checkin);
+
+
+    if (!checkin) {
+        throw new ApiError(404, "Checkin not found");
+    }
+
+    // ✅ Only allow before CheckedIn
+    if (checkin.Status === "CheckedIn") {
+        throw new ApiError(400, "Vehicle already checked in");
+    }
+
+    if (checkin.Status === "CheckedOut") {
+        throw new ApiError(400, "Vehicle already checked out");
+    }
+
+    // ✅ If number plate already exists — delete old S3 + DB and replace
+    const existingNumberPlate = await prisma.driver_Documents.findFirst({
+        where: {
+            Driver_Checkin_Id: id,
+            Doc_Type: "numberPlate"
+        }
+    });
+
+    if (existingNumberPlate) {
+        // ✅ Delete old S3 file
+
+        await deleteFromS3(existingNumberPlate.Image_Path);
+
+
+        // ✅ Delete old DB record
+        await prisma.driver_Documents.delete({
+            where: {
+                Id: existingNumberPlate.Id,
+            }
+        });
+    }
+
+    // ✅ Upload new number plate to S3
+    const s3Url = await uploadToS3(req.file, checkin.Do_No, "numberPlate");
+
+    // ✅ Save to DB
+    const result = await prisma.driver_Documents.create({
+        data: {
+            Driver_Checkin_Id: id,
+            Doc_Type: "numberPlate",
+            Image_Path: s3Url,
+            Verified: true,
+        }
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, result, "Number plate uploaded successfully")
+    );
+});
+
+

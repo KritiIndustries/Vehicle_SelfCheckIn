@@ -142,10 +142,16 @@ export const uploadTempDocuments = asyncHandler(async (req, res) => {
         throw new ApiError(400, "No files uploaded");
     }
     let types = req.body.types;
+    console.log("types ", types);
+
 
     if (typeof types === "string") {
         types = JSON.parse(types);
     }
+    // if (!allowedDocTypes.includes(types)) {
+    //     throw new ApiError(400, "Invalid document type");
+    // }
+
     // const doExisting = await prisma.driver_Checkin.findFirst({
     //     where: {
     //         Do_No: doNumber
@@ -162,8 +168,33 @@ export const uploadTempDocuments = asyncHandler(async (req, res) => {
         const file = req.files[i];
         const type = types[i];
 
+        // ✅ Check if doc already exists for this session + type
+        const existing = await prisma.driver_Temp_Upload.findFirst({
+            where: {
+                Session_Id: sessionId,
+                Doc_Type: type,
+            }
+        });
+
+        if (existing) {
+            // ✅ Delete from S3
+            try {
+                await deleteFromS3(existing.Image_Path);
+            } catch (s3Err) {
+                console.error(`S3 delete failed for ${type}:`, s3Err.message);
+                // continue even if S3 delete fails
+            }
+
+            // ✅ Delete from DB
+            await prisma.driver_Temp_Upload.delete({
+                where: { Id: existing.Id }
+            });
+        }
+
+        // ✅ Upload new file to S3
         const url = await uploadToS3(file, doNumber, type);
 
+        // ✅ Save to DB
         await prisma.driver_Temp_Upload.create({
             data: {
                 Session_Id: sessionId,
@@ -542,12 +573,10 @@ export const uploadSingleDocument = asyncHandler(async (req, res) => {
     try {
         const file = req.file;
         // ✅ 1. GET OLD RECORD (before overwrite)
-        const existingDoc = await prisma.driver_Temp_Upload.findUnique({
+        const existingDoc = await prisma.driver_Temp_Upload.findFirst({
             where: {
-                Session_Id_Doc_Type: {
-                    Session_Id: sessionId,
-                    Doc_Type: type,
-                },
+                Session_Id: sessionId,
+                Doc_Type: type,
             },
         });
 
@@ -556,23 +585,22 @@ export const uploadSingleDocument = asyncHandler(async (req, res) => {
         const url = await uploadToS3(file, doNumber, type);
 
         // ✅ 3. UPSERT DB
-        await prisma.driver_Temp_Upload.upsert({
-            where: {
-                Session_Id_Doc_Type: {
+        // ✅ 3. UPDATE OR CREATE
+        if (existingDoc) {
+            await prisma.driver_Temp_Upload.update({
+                where: { Id: existingDoc.Id },
+                data: { Image_Path: url },
+            });
+        } else {
+            await prisma.driver_Temp_Upload.create({
+                data: {
                     Session_Id: sessionId,
                     Doc_Type: type,
+                    Image_Path: url,
+                    Is_Selfie: false,
                 },
-            },
-            update: {
-                Image_Path: url,
-            },
-            create: {
-                Session_Id: sessionId,
-                Doc_Type: type,
-                Image_Path: url,
-                Is_Selfie: false,
-            },
-        });
+            });
+        }
 
         // ✅ 4. DELETE OLD FILE AFTER SUCCESS
         if (existingDoc?.Image_Path) {
