@@ -1,5 +1,4 @@
-
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Truck,
     Clock,
@@ -12,7 +11,7 @@ import {
 import AppHeader from "@/components/AppHeader";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
-
+import PickerSheet from "@/components/PickerSheet";
 
 import axios from "axios";
 import formatApiDate from "@/services/formatApiDate.service";
@@ -30,8 +29,11 @@ export default function GuardDashboard() {
     const [loading, setLoading] = useState(true);
     const [showImageModal, setShowImageModal] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
-    const [viewedDocs, setViewedDocs] = useState(new Set())
+    const [viewedDocs, setViewedDocs] = useState(new Set());
     const [documents, setDocuments] = useState([]);
+    const [showPicker, setShowPicker] = useState(false);
+    const fileInputRef = useRef(null);
+    const [numberPlateUploaded, setNumberPlateUploaded] = useState(false);
 
     const fetchVehicles = async () => {
         try {
@@ -76,7 +78,6 @@ export default function GuardDashboard() {
 
             const token = localStorage.getItem("guardToken");
 
-
             if (!token) {
                 toast.error("Session expired. Please login again.");
                 return;
@@ -87,14 +88,13 @@ export default function GuardDashboard() {
                 {},
                 {
                     headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
             );
 
             fetchVehicles();
             setSelectedVehicle(null);
-
         } catch (err) {
             toast.error(err?.response?.data?.message || "Approval failed");
         } finally {
@@ -110,29 +110,65 @@ export default function GuardDashboard() {
             setSelectedVehicle(null);
         } catch (err) {
             toast.error("Checkout failed");
-        }
-        finally {
+        } finally {
             setActionLoading(null);
         }
     };
     // ✅ Reset viewed docs when a new vehicle is selected
     useEffect(() => {
         setViewedDocs(new Set());
+        setNumberPlateUploaded(false);
+        fetchVehicles(); // Refresh data to get latest doc statuses
     }, [selectedVehicle?.id]);
     // ✅ Mark doc as viewed
     const handleViewDoc = (docType, url) => {
-        setViewedDocs(prev => new Set([...prev, docType]));
+        setViewedDocs((prev) => new Set([...prev, docType]));
         window.open(url, "_blank");
     };
     // ✅ All 5 docs viewed?
-    const allDocsViewed = selectedVehicle?.documents?.length > 0 &&
-        selectedVehicle.documents.every(doc => viewedDocs.has(doc.Doc_Type));
+    const allDocsViewed =
+        selectedVehicle?.documents?.length > 0 &&
+        selectedVehicle.documents.every((doc) => viewedDocs.has(doc.Doc_Type));
 
     const handleDocumentClick = (documents) => {
-        setDocuments(...documents); 1
-        if (documents.length === 5) return setViewingDocuments(true);
-        return
-    }
+        setDocuments(documents);
+        if (documents.length === 5) {
+            setShowImageModal(true);
+        }
+        return;
+    };
+
+    const handleReject = async (id) => {
+        try {
+            setActionLoading(`reject-${id}`);
+
+            const token = localStorage.getItem("guardToken");
+            if (!token) {
+                toast.error("Session expired. Please login again.");
+                return;
+            }
+
+            await axios.patch(
+                `${API}/api/guard/reject/${id}`,
+                { remark: rejectRemark },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            toast.success("Vehicle rejected");
+            setShowRejectModal(false);
+            setRejectRemark("");
+            fetchVehicles();
+            setSelectedVehicle(null);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || "Reject failed");
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     const displayed = activeTab === "queue" ? queueVehicles : insideVehicles;
 
@@ -283,9 +319,12 @@ export default function GuardDashboard() {
                                     className="text-sm"
                                     style={{ color: "hsl(var(--muted-foreground))" }}
                                 >
-                                    {selectedVehicle.driverName} <CallButton phoneNumber={selectedVehicle.Mobile} label={`${selectedVehicle.Mobile}`} />
+                                    {selectedVehicle.driverName}{" "}
+                                    <CallButton
+                                        phoneNumber={selectedVehicle.Mobile}
+                                        label={`${selectedVehicle.Mobile}`}
+                                    />
                                 </p>
-
                             </div>
 
                             <button
@@ -339,6 +378,23 @@ export default function GuardDashboard() {
                                 </button>
                             )}
 
+                        {/* Upload using shared picker */}
+                        <button
+                            onClick={() => setShowPicker(true)}
+                            disabled={!allDocsViewed}
+                            className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                                background: "hsl(var(--primary))",
+                                color: "hsl(var(--primary-foreground))",
+                            }}
+                        >
+                            {numberPlateUploaded
+                                ? "✓ Number Plate Uploaded"
+                                : !allDocsViewed
+                                    ? "Upload Number Plate (View all docs first)"
+                                    : "Upload Number Plate"}
+                        </button>
+
                         {/* {selectedVehicle.status === "waiting" && (
                             <>
                               
@@ -380,7 +436,8 @@ export default function GuardDashboard() {
                                     onClick={() => handleCheckIn(selectedVehicle.id)}
                                     disabled={
                                         actionLoading === `checkin-${selectedVehicle.id}` ||
-                                        !allDocsViewed   // ✅ blocked until all docs viewed
+                                        !allDocsViewed || // ✅ blocked until all docs viewed
+                                        !numberPlateUploaded // ✅ blocked until number plate is uploaded
                                     }
                                     className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{
@@ -395,6 +452,8 @@ export default function GuardDashboard() {
                                         </>
                                     ) : !allDocsViewed ? (
                                         `View all docs first (${viewedDocs.size}/${selectedVehicle.documents?.length})`
+                                    ) : !numberPlateUploaded ? (
+                                        "Upload number plate first"
                                     ) : (
                                         "Approve Entry"
                                     )}
@@ -421,11 +480,7 @@ export default function GuardDashboard() {
                                     ) : (
                                         "Check Out"
                                     )}
-
                                 </button>
-
-
-
                             )}
                     </div>
                 </div>
@@ -578,7 +633,7 @@ export default function GuardDashboard() {
                                             className="w-full overflow-hidden rounded-xl border"
                                             style={{
                                                 borderColor: isViewed
-                                                    ? "hsl(var(--success))"      // ✅ green border if viewed
+                                                    ? "hsl(var(--success))" // ✅ green border if viewed
                                                     : "hsl(var(--border))",
                                             }}
                                         >
@@ -591,7 +646,14 @@ export default function GuardDashboard() {
                                                 </p>
                                                 {/* ✅ Green check if viewed */}
                                                 {isViewed && (
-                                                    <span style={{ color: "hsl(var(--success))", fontSize: 14 }}>✓</span>
+                                                    <span
+                                                        style={{
+                                                            color: "hsl(var(--success))",
+                                                            fontSize: 14,
+                                                        }}
+                                                    >
+                                                        ✓
+                                                    </span>
                                                 )}
                                             </div>
 
@@ -606,7 +668,7 @@ export default function GuardDashboard() {
                                                     className="w-full mt-1 py-1 rounded text-white text-xs font-medium"
                                                     style={{
                                                         background: isViewed
-                                                            ? "hsl(var(--success))"   // ✅ green if already viewed
+                                                            ? "hsl(var(--success))" // ✅ green if already viewed
                                                             : "#2563eb",
                                                     }}
                                                 >
@@ -625,13 +687,67 @@ export default function GuardDashboard() {
                                 className="text-xs text-center mt-2 mb-3"
                                 style={{ color: "hsl(var(--muted-foreground))" }}
                             >
-                                View all documents to enable approval
-                                ({viewedDocs.size}/{selectedVehicle.documents.length} viewed)
+                                View all documents to enable approval ({viewedDocs.size}/
+                                {selectedVehicle.documents.length} viewed)
                             </p>
                         )}
                     </div>
                 </div>
             )}
+            {/* Shared PickerSheet */}
+            <PickerSheet
+                show={showPicker}
+                onClose={() => setShowPicker(false)}
+                onPick={(type) => {
+                    setShowPicker(false);
+
+                    setTimeout(() => {
+                        if (type === "camera") {
+                            fileInputRef.current.setAttribute("capture", "environment");
+                            fileInputRef.current.accept = "image/*";
+                        } else {
+                            fileInputRef.current.removeAttribute("capture");
+                            fileInputRef.current.accept = "image/*";
+                        }
+
+                        fileInputRef.current.click();
+                    }, 200);
+                }}
+            />
+
+            {/* ✅ ADD INPUT HERE */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (!file || !selectedVehicle) return;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append("id", selectedVehicle.id);
+                        formData.append("numberPlate", file);
+
+                        const token = localStorage.getItem("guardToken");
+
+                        await axios.post(`${API}/api/guard/upload-number-plate`, formData, {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                                "Content-Type": "multipart/form-data",
+                            },
+                        });
+                        setNumberPlateUploaded(true);
+
+                        toast.success("Number plate uploaded ✅");
+                    } catch (err) {
+                        console.error(err);
+                        toast.error("Upload failed ❌");
+                    }
+
+                    e.target.value = "";
+                }}
+            />
         </div>
     );
 }
