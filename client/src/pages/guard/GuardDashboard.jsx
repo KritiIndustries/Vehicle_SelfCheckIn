@@ -105,7 +105,17 @@ export default function GuardDashboard() {
     const handleCheckOut = async (id) => {
         try {
             setActionLoading(`checkout-${id}`);
-            await axios.patch(`${API}/api/guard/checkout/${id}`);
+            const token = localStorage.getItem("guardToken");
+
+            if (!token) {
+                toast.error("Session expired. Please login again.");
+                return;
+            }
+            await axios.patch(`${API}/api/guard/checkout/${id}`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            },);
             fetchVehicles();
             setSelectedVehicle(null);
         } catch (err) {
@@ -381,7 +391,11 @@ export default function GuardDashboard() {
                         {/* Upload using shared picker */}
                         <button
                             onClick={() => setShowPicker(true)}
-                            disabled={!allDocsViewed}
+                            disabled={
+                                !allDocsViewed ||
+                                (selectedVehicle?.status === "CheckedIn") ||
+                                (selectedVehicle?.status === "loading")
+                            }
                             className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                             style={{
                                 background: "hsl(var(--primary))",
@@ -392,7 +406,9 @@ export default function GuardDashboard() {
                                 ? "✓ Number Plate Uploaded"
                                 : !allDocsViewed
                                     ? "Upload Number Plate (View all docs first)"
-                                    : "Upload Number Plate"}
+                                    : (selectedVehicle?.status === "CheckedIn" || selectedVehicle?.status === "loading")
+                                        ? "Upload disabled on checkout"
+                                        : "Upload Number Plate"}
                         </button>
 
                         {/* {selectedVehicle.status === "waiting" && (
