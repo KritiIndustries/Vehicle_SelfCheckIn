@@ -301,8 +301,8 @@ const SelfieVerification = () => {
                     <StepIndicator
                         currentStep={3}
                         totalSteps={4}
-                        label="Selfie Verification"
-                        labelHi="सेल्फी सत्यापन"
+                        label="Vehicle Verification"
+                        labelHi="वाहन सत्यापन"
                     />
                 </div>
 

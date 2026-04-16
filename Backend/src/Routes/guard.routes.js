@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { approveEntry, checkoutVehicle, getCheckedinDetails, uploadNumberPlate } from "../Controllers/guard.controller.js";
+import { approveEntry, checkoutVehicle, getCheckedinDetails, rejectVehicle, uploadNumberPlate } from "../Controllers/guard.controller.js";
 import authMiddleware from "../Middlewares/authMiddleware.js";
 import { getS3Image } from "../services/s3.service.js";
 import { convertToJpeg } from "../Middlewares/convertToJpeg.js";
@@ -11,6 +11,7 @@ const router = Router();
 router.get('/getCheckedinDetails', getCheckedinDetails);
 router.patch("/approve/:id", authMiddleware, approveEntry);
 router.patch("/checkout/:id", authMiddleware, checkoutVehicle);
+router.patch("/reject/:id", authMiddleware, rejectVehicle);
 router.get("/image/:folder/:subfolder/:filename", getS3Image);
 router.post(
     "/upload-number-plate",

@@ -68,7 +68,7 @@ function ValidateHomePage() {
         const data = res.data.data;
 
         // ✅ Already reported → go success
-        if (data.Status === "ReportIn" || data.Status === "CheckedIn") {
+        if (data.Status === "ReportIn" || data.Status === "CheckedIn" || data.Status === "CheckedOut") {
           navigate("/driver/success", { state: data });
         } else {
           setLoading(false); // show form

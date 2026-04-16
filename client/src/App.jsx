@@ -22,6 +22,9 @@ import ValidateHomePage from "./pages/driver/ValidateHomePage";
 
 const queryClient = new QueryClient();
 
+const driverRadius = parseFloat(import.meta.env.VITE_GEOFENCE_RADIUS_DRIVER) || 150;
+const guardRadius = parseFloat(import.meta.env.VITE_GEOFENCE_RADIUS_GUARD) || 50;
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -44,45 +47,45 @@ const App = () => (
             </GeoGuard>
           } /> */}
           <Route path="/driver/location" element={
-            <GeoGuard>
+            <GeoGuard radius={driverRadius}>
               <LocationCheck />
             </GeoGuard>
           } />
           <Route path="/d" element={
-            <GeoGuard>
+            <GeoGuard radius={driverRadius}>
               {/* <DriverDetails /> */}
               <ValidateHomePage />
             </GeoGuard>
           } />
           <Route path="/driver/documents" element={
-            <GeoGuard>
+            <GeoGuard radius={driverRadius}>
               <DocumentUpload />
             </GeoGuard>
           } />
           <Route path="/driver/doc-review" element={
-            <GeoGuard>
+            <GeoGuard radius={driverRadius}>
               <DocumentReview />
             </GeoGuard>
           } />
           <Route path="/driver/selfie" element={
-            <GeoGuard>
+            <GeoGuard radius={driverRadius}>
               <SelfieVerification />
             </GeoGuard>
           } />
           <Route path="/driver/success" element={
-            <GeoGuard>
+            <GeoGuard radius={driverRadius}>
               <CheckinSuccess />
             </GeoGuard>
           } />
 
           {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
           <Route path="/guard/login" element={
-            <GeoGuard>
+            <GeoGuard radius={guardRadius}>
               <GuardLogin />
             </GeoGuard>
           } />
           <Route path="/guard/dashboard" element={
-            <GeoGuard>
+            <GeoGuard radius={guardRadius}>
               <GuardDashboard />
             </GeoGuard>
           } />

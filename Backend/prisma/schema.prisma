@@ -19,6 +19,7 @@ model Guard_Master {
   Updated_At   DateTime @updatedAt
 
   Verified_Documents Driver_Documents[]
+  RejectedVehicles   Rejected_Vehicle[]
 
   @@map("GUARD_MASTER")
 }
@@ -65,6 +66,7 @@ model Driver_Checkin {
 
   Documents              Driver_Documents[]
   weighbridge            Weighbridge?
+  RejectedVehicle        Rejected_Vehicle[] 
 
   @@map("DRIVER_CHECKIN")
 
@@ -146,4 +148,25 @@ model Weighbridge {
 
   @@index([VehicleNo])
   @@index([GatePassNo])
+}
+
+model Rejected_Vehicle {
+  Id              Int      @id @default(autoincrement())
+
+  Driver_Checkin_Id Int
+  Rejected_By     Int      // Guard_Id
+
+  Reason          String   // rejection reason
+
+  Rejected_At     DateTime @default(now())
+  Created_At      DateTime @default(now())
+  Updated_At      DateTime @updatedAt
+
+  // ✅ Relations
+  DriverCheckin   Driver_Checkin @relation(fields: [Driver_Checkin_Id], references: [Id])
+  Guard           Guard_Master   @relation(fields: [Rejected_By], references: [Guard_Id])
+
+  @@map("REJECTED_VEHICLE")
+  @@index([Driver_Checkin_Id])
+  @@index([Rejected_By])
 }

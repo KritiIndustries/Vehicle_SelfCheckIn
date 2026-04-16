@@ -170,7 +170,7 @@ const CheckinSuccess = () => {
                 const res = await axios.get(`${API}/api/driver/validatePage/${doNo}`);
                 const freshData = res.data.data;
 
-                if (freshData.Status === "ReportIn" || freshData.Status === "CheckedIn") {
+                if (freshData.Status === "ReportIn" || freshData.Status === "CheckedIn" || freshData.Status === "CheckedOut") {
                     setData(freshData); // ✅ update with latest Token
                 } else {
                     // Status changed to something else (CheckedOut etc.) → go back

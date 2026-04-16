@@ -389,6 +389,9 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     const existing = await prisma.driver_Checkin.findFirst({
         where: {
             Do_No: doNo,
+            Status: {
+                not: 'Rejected',
+            },
         },
     });
     // const existing = await prisma.driver_Checkin.findFirst({
@@ -551,7 +554,7 @@ export const validatePage = asyncHandler(async (req, res) => {
         where: {
             Do_No: DO,
             Status: {
-                not: "CheckedOut"
+                not: "Rejected"
             }
         },
     });

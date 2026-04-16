@@ -19,6 +19,7 @@ import { set } from "date-fns";
 import { Loader2 } from "lucide-react";
 import CallButton from "../driver/components/CallButton";
 
+
 const API = import.meta.env.VITE_API_BASE_URL;
 export default function GuardDashboard() {
     const [vehicles, setVehicles] = useState([]);
@@ -158,15 +159,17 @@ export default function GuardDashboard() {
                 return;
             }
 
-            await axios.patch(
+            const response = await axios.patch(
                 `${API}/api/guard/reject/${id}`,
-                { remark: rejectRemark },
+                { reason: rejectRemark },
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 },
             );
+            console.log("Response", response.data);
+
 
             toast.success("Vehicle rejected");
             setShowRejectModal(false);
@@ -388,64 +391,25 @@ export default function GuardDashboard() {
                                 </button>
                             )}
 
-                        {/* Upload using shared picker */}
-                        <button
-                            onClick={() => setShowPicker(true)}
-                            disabled={
-                                !allDocsViewed ||
-                                (selectedVehicle?.status === "CheckedIn") ||
-                                (selectedVehicle?.status === "loading")
-                            }
-                            className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                            style={{
-                                background: "hsl(var(--primary))",
-                                color: "hsl(var(--primary-foreground))",
-                            }}
-                        >
-                            {numberPlateUploaded
-                                ? "✓ Number Plate Uploaded"
-                                : !allDocsViewed
-                                    ? "Upload Number Plate (View all docs first)"
-                                    : (selectedVehicle?.status === "CheckedIn" || selectedVehicle?.status === "loading")
-                                        ? "Upload disabled on checkout"
+                        {/* Upload using shared picker - hide when viewing CheckedIn tab */}
+                        {!(selectedVehicle.status === "CheckedIn" && activeTab === "CheckedIn") && (
+                            <button
+                                onClick={() => setShowPicker(true)}
+                                disabled={!allDocsViewed}
+                                className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                style={{
+                                    background: "hsl(var(--primary))",
+                                    color: "hsl(var(--primary-foreground))",
+                                }}
+                            >
+                                {numberPlateUploaded
+                                    ? "✓ Number Plate Uploaded"
+                                    : !allDocsViewed
+                                        ? "Upload Number Plate (View all docs first)"
                                         : "Upload Number Plate"}
-                        </button>
+                            </button>
+                        )}
 
-                        {/* {selectedVehicle.status === "waiting" && (
-                            <>
-                              
-                                <button
-                                    onClick={() => handleCheckIn(selectedVehicle.id)}
-                                    disabled={actionLoading === `checkin-${selectedVehicle.id}`}
-                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-70"
-                                    style={{
-                                        background: "hsl(var(--primary))",
-                                        color: "hsl(var(--primary-foreground))",
-                                    }}
-                                >
-                                    {actionLoading === `checkin-${selectedVehicle.id}` ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Processing...
-                                        </>
-                                    ) : (
-                                        "Approve Entry"
-                                    )}
-                                </button>
-                                //TODO: add REJECT state
-                                
-                                <button
-                                    onClick={() => setShowRejectModal(true)}
-                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
-                                    style={{
-                                        background: "hsl(var(--destructive))",
-                                        color: "hsl(var(--destructive-foreground))",
-                                    }}
-                                >
-                                    Reject
-                                </button> 
-                            </>
-                        )} */}
                         {selectedVehicle.status === "waiting" && (
                             <>
                                 <button
@@ -455,7 +419,7 @@ export default function GuardDashboard() {
                                         !allDocsViewed || // ✅ blocked until all docs viewed
                                         !numberPlateUploaded // ✅ blocked until number plate is uploaded
                                     }
-                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className=" mt-3 w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
                                     style={{
                                         background: "hsl(var(--primary))",
                                         color: "hsl(var(--primary-foreground))",
@@ -473,6 +437,21 @@ export default function GuardDashboard() {
                                     ) : (
                                         "Approve Entry"
                                     )}
+                                </button>
+                            </>
+                        )}
+
+                        {selectedVehicle.status === "waiting" && (
+                            <>
+                                <button
+                                    onClick={() => setShowRejectModal(true)}
+                                    className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2"
+                                    style={{
+                                        background: "hsl(var(--destructive))",
+                                        color: "hsl(var(--destructive-foreground))",
+                                    }}
+                                >
+                                    Reject
                                 </button>
                             </>
                         )}

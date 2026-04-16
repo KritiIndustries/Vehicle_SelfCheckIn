@@ -111,12 +111,13 @@ export const guardLogin = asyncHandler(async (req, res) => {
 export const getCheckedinDetails = asyncHandler(async (req, res) => {
 
     const details = await prisma.driver_Checkin.findMany({
+        //TODO: Add date filter for today only
         where: {
-            Status: {
-                in: ["ReportIn", "CheckedIn"] // This looks for both statuses
-            }
+            AND: [
+                { Status: { in: ["ReportIn", "CheckedIn"] } },
+                { Status: { not: "Rejected" } }
+            ]
         },
-
         include: {
             Documents: {
                 orderBy: {
@@ -326,6 +327,71 @@ export const uploadNumberPlate = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new ApiResponse(200, result, "Number plate uploaded successfully")
+    );
+});
+export const rejectVehicle = asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const { reason } = req.body;
+    if (!reason || reason.trim() === "") {
+        throw new ApiError(400, "Rejection reason is required");
+    }
+    console.log(reason);
+
+
+    if (!req.user?.id) throw new ApiError(401, "Unauthorized");
+
+    const checkin = await prisma.driver_Checkin.findUnique({
+        where: { Id: id }
+    });
+
+
+    if (!checkin) throw new ApiError(404, "Checkin not found");
+
+    if (checkin.Status !== "ReportIn") {
+        throw new ApiError(400, `Cannot reject — current status is ${checkin.Status}`);
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+
+        // STEP 1: Update status to Rejected
+        await tx.driver_Checkin.update({
+            where: { Id: id },
+            data: { Status: "Rejected" }
+        });
+
+
+        // STEP 2: Create rejection record
+        const rejection = await tx.rejected_Vehicle.create({
+            data: {
+                Driver_Checkin_Id: id,
+                Rejected_By: req.user.id,
+                Reason: reason.trim(),
+            }
+        });
+
+        // STEP 3: Decrement tokens for drivers after this one
+        if (checkin.Token !== null && checkin.Token > 0) {
+            await tx.driver_Checkin.updateMany({
+                where: {
+                    Status: "ReportIn",
+                    Token: { gt: checkin.Token }
+                },
+                data: { Token: { decrement: 1 } }
+            });
+
+            await tx.driver_Checkin.update({
+                where: { Id: id },
+                data: { Token: 0 }
+            });
+        }
+
+        return rejection;
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, result, "Vehicle rejected successfully")
     );
 });
 
