@@ -43,7 +43,7 @@ import axios from "axios";
 const insertZGP = async (data, token) => {
     try {
 
-        const url = `http://ktappdq.kritiindia.com:8010/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
+        const url = `http://182.74.4.110:1084/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
 
         const now = new Date();
         // ✅ Always use IST (UTC+5:30) regardless of server timezone

@@ -407,7 +407,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         throw new ApiError(409, "आप पहले ही  रिपोर्ट इन कर लिया है।");
     }
     const secondaryURL =
-        "http://ktappdq.kritiindia.com:8010/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet";
+        "http://182.74.4.110:1084/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet";
     //TODO: Remove http://ktappdq.kritiindia.com:8010 port will be 1081 for development and 8010 for production. Make it dynamic based on environment variable
     // const tokenAndcookie = fetchCsrfToken(ZGPAPI_URL)
 
