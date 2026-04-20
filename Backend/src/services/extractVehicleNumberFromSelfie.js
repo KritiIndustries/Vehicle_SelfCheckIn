@@ -19,30 +19,52 @@ export const extractVehicleNumbersFromSelfie = async (imageUrl) => {
 
     console.log("TOKENS:", tokens);
 
-    const regex = /^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{3,4}$/;
+    // const regex = /^[A-Z]{2}\d{1,2}[A-Z]{0,3}\d{3,4}$/;
+    const regex = /^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{3,4}$/
 
     const results = new Set();
 
+    // for (let i = 0; i < tokens.length; i++) {
+
+    //     const state = tokens[i].substring(0, 2);
+
+    //     if (!validStateCodes.has(state)) continue;
+
+    //     let combined = tokens[i];
+
+    //     for (let j = i + 1; j < tokens.length && j < i + 4; j++) {
+    //         combined += tokens[j];
+
+    //         const clean = combined.replace(/\s/g, "");
+
+    //         if (regex.test(clean)) {
+    //             results.add(clean);
+    //         }
+    //     }
+
+    //     // also check single token (important)
+    //     if (regex.test(tokens[i])) {
+    //         results.add(tokens[i]);
+    //     }
+    // }
+    const regexFull = /^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{3,4}$/;
+
     for (let i = 0; i < tokens.length; i++) {
 
-        const state = tokens[i].substring(0, 2);
+        for (let j = 0; j < tokens.length; j++) {
+            if (i === j) continue;
 
-        if (!validStateCodes.has(state)) continue;
+            const combined = tokens[i] + tokens[j];
 
-        let combined = tokens[i];
+            console.log("TRY:", combined);
 
-        for (let j = i + 1; j < tokens.length && j < i + 4; j++) {
-            combined += tokens[j];
-
-            const clean = combined.replace(/\s/g, "");
-
-            if (regex.test(clean)) {
-                results.add(clean);
+            if (regexFull.test(combined)) {
+                results.add(combined);
             }
         }
 
-        // also check single token (important)
-        if (regex.test(tokens[i])) {
+        // also check single token
+        if (regexFull.test(tokens[i])) {
             results.add(tokens[i]);
         }
     }
@@ -81,8 +103,8 @@ export const fixCommonOCRMistakes = (text) => {
         .toUpperCase()
         .replace(/[^A-Z0-9]/g, "")
         .replace(/O/g, "0")
-        .replace(/I/g, "1")
-        .replace(/Z/g, "2")
-        .replace(/S/g, "5")
-        .replace(/B/g, "8");
+    // .replace(/I/g, "1")
+    // .replace(/Z/g, "2")
+    // .replace(/S/g, "5")
+    // .replace(/B/g, "8");
 };
