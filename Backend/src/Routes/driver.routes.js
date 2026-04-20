@@ -2,7 +2,7 @@ import { Router } from "express";
 import authMiddleware from "../Middlewares/authMiddleware.js";
 import ipRestrictionMiddleware from "../Middlewares/ipRestriction.middleware.js";
 import geofenceMiddleware from "../Middlewares/geofence.middleware.js";
-import { finalizeCheckin, uploadDoc, uploadTempDocument, uploadTempSelfie, uploadTempDocuments, validatePage, uploadSingleDocument } from "../Controllers/driver.controller.js";
+import { finalizeCheckin, uploadDoc, uploadTempDocument, uploadTempSelfie, uploadTempDocuments, validatePage, uploadSingleDocument, saveEditedDocument } from "../Controllers/driver.controller.js";
 import { upload } from "../Middlewares/multer.middleware.js";
 import multer from "multer";
 import { convertToJpeg } from "../Middlewares/convertToJpeg.js";
@@ -86,6 +86,7 @@ router.post(
     uploadTempDocuments
 );
 router.post("/finalize", finalizeCheckin);
+router.post("/edited-document", saveEditedDocument);
 router.get('/validatePage/:do', validatePage)
 router.post("/upload-single", upload.single("document"), uploadSingleDocument);
 export default router;

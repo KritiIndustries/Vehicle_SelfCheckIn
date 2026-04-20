@@ -29,6 +29,9 @@ export default function GuardDashboard() {
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showImageModal, setShowImageModal] = useState(false);
+    const [showEditedModal, setShowEditedModal] = useState(false);
+    const [editedDocs, setEditedDocs] = useState([]);
+    const [loadingEditedDocs, setLoadingEditedDocs] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
     const [viewedDocs, setViewedDocs] = useState(new Set());
     const [documents, setDocuments] = useState([]);
@@ -147,6 +150,23 @@ export default function GuardDashboard() {
             setShowImageModal(true);
         }
         return;
+    };
+
+    const fetchEditedDocs = async (checkinId) => {
+        try {
+            setLoadingEditedDocs(true);
+            const token = localStorage.getItem("guardToken");
+            const res = await axios.get(`${API}/api/guard/edited-docs/${checkinId}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
+            setEditedDocs(res.data.data || []);
+            setShowEditedModal(true);
+        } catch (err) {
+            console.error(err);
+            toast.error("Failed to fetch edited documents");
+        } finally {
+            setLoadingEditedDocs(false);
+        }
     };
 
     const handleReject = async (id) => {
@@ -390,6 +410,18 @@ export default function GuardDashboard() {
                                     View Uploaded Images
                                 </button>
                             )}
+                        {/* View edited documents button */}
+                        <button
+                            onClick={() => fetchEditedDocs(selectedVehicle.id)}
+                            disabled={loadingEditedDocs}
+                            className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 mb-3"
+                            style={{
+                                border: "1px solid hsl(var(--primary))",
+                                color: "hsl(var(--primary))",
+                            }}
+                        >
+                            {loadingEditedDocs ? "Loading..." : "View Edited Documents"}
+                        </button>
 
                         {/* Upload using shared picker - hide when viewing CheckedIn tab */}
                         {!(selectedVehicle.status === "CheckedIn" && activeTab === "CheckedIn") && (
@@ -686,6 +718,135 @@ export default function GuardDashboard() {
                                 {selectedVehicle.documents.length} viewed)
                             </p>
                         )}
+                    </div>
+                </div>
+            )}
+            {/* EDITED DOCUMENTS MODAL */}
+            {showEditedModal && (
+                <div className="fixed inset-0 z-75 flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0"
+                        style={{ background: "hsl(var(--foreground) / 0.7)" }}
+                        onClick={() => setShowEditedModal(false)}
+                    />
+
+                    <div className="relative w-full max-w-md rounded-2xl p-4 max-h-[80vh] overflow-auto shadow-2xl" style={{ background: "hsl(var(--card))" }}>
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-bold" style={{ color: "hsl(var(--foreground))" }}>Edited Documents</h3>
+                            <button onClick={() => setShowEditedModal(false)} className="text-xl" style={{ color: "hsl(var(--muted-foreground))" }}>✕</button>
+                        </div>
+
+                        {editedDocs.length === 0 && (
+                            <div className="text-center py-8" style={{ color: "hsl(var(--muted-foreground))" }}>No edited documents</div>
+                        )}
+
+                        {/* <div className="space-y-3">
+                            {editedDocs.map((d) => (
+                                <div key={d.Id} className="p-3 rounded-xl border" style={{ borderColor: "hsl(var(--border))" }}>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-sm font-semibold" style={{ color: "hsl(var(--foreground))" }}>{d.Doc_Type}</p>
+                                            <p className="text-xs text-muted" style={{ color: "hsl(var(--muted-foreground))" }}>Edited: {new Date(d.Created_At).toLocaleString()}</p>
+                                        </div>
+                                        {d.Image_Path && (
+                                            <a className="text-xs text-primary" href={d.Image_Path} target="_blank" rel="noreferrer">View Image</a>
+                                        )}
+                                    </div>
+                                    <pre className="mt-2 text-xs bg-neutral-secondary-medium p-2 rounded" style={{ overflowX: 'auto' }}>{JSON.stringify(d.Edited_Fields, null, 2)}</pre>
+                                </div>
+                            ))}
+                        </div> */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm border-collapse">
+                                <thead>
+                                    <tr style={{ backgroundColor: "hsl(var(--muted))" }}>
+                                        <th className="text-left px-4 py-2 border font-semibold" style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}>
+                                            Document
+                                        </th>
+                                        <th className="text-left px-4 py-2 border font-semibold" style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}>
+                                            Field
+                                        </th>
+                                        <th className="text-left px-4 py-2 border font-semibold" style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}>
+                                            Old Value
+                                        </th>
+                                        <th className="text-left px-4 py-2 border font-semibold" style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}>
+                                            New Value
+                                        </th>
+                                        <th className="text-left px-4 py-2 border font-semibold" style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}>
+                                            Edited At
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {editedDocs.flatMap((d) =>
+                                        Object.entries(d.Edited_Fields || {}).map(([field, values], fieldIdx) => (
+                                            <tr
+                                                key={`${d.Id}_${field}`}
+                                                style={{
+                                                    backgroundColor: fieldIdx % 2 === 0
+                                                        ? "hsl(var(--background))"
+                                                        : "hsl(var(--muted))"
+                                                }}
+                                            >
+                                                {/* ✅ Show Doc_Type only on first field row, merge visually */}
+                                                {fieldIdx === 0 ? (
+                                                    <td
+                                                        className="px-4 py-2 border font-semibold align-top"
+                                                        style={{
+                                                            borderColor: "hsl(var(--border))",
+                                                            color: "hsl(var(--foreground))",
+                                                            verticalAlign: "top"
+                                                        }}
+                                                        rowSpan={Object.keys(d.Edited_Fields || {}).length}
+                                                    >
+                                                        <span className="inline-block px-2 py-0.5 rounded text-xs font-bold"
+                                                            style={{
+                                                                backgroundColor: "hsl(var(--primary))",
+                                                                color: "hsl(var(--primary-foreground))"
+                                                            }}>
+                                                            {d.Doc_Type}
+                                                        </span>
+                                                    </td>
+                                                ) : null}
+
+                                                {/* Field Name */}
+                                                <td className="px-4 py-2 border capitalize"
+                                                    style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                                                    {field.replace(/([A-Z])/g, ' $1').trim()}
+                                                </td>
+
+                                                {/* Old Value */}
+                                                <td className="px-4 py-2 border"
+                                                    style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--destructive))" }}>
+                                                    {values.old ?? "-"}
+                                                </td>
+
+                                                {/* New Value */}
+                                                <td className="px-4 py-2 border"
+                                                    style={{ borderColor: "hsl(var(--border))", color: "hsl(var(--foreground))" }}>
+                                                    {values.new ?? "-"}
+                                                </td>
+
+                                                {/* Edited At - only on first row */}
+                                                {fieldIdx === 0 ? (
+                                                    <td
+                                                        className="px-4 py-2 border text-xs align-top"
+                                                        style={{
+                                                            borderColor: "hsl(var(--border))",
+                                                            color: "hsl(var(--muted-foreground))",
+                                                            verticalAlign: "top"
+                                                        }}
+                                                        rowSpan={Object.keys(d.Edited_Fields || {}).length}
+                                                    >
+                                                        {new Date(d.Created_At).toLocaleString()}
+                                                    </td>
+                                                ) : null}
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}

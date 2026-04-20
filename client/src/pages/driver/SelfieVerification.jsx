@@ -254,6 +254,7 @@ const SelfieVerification = () => {
             setUploading(true);
             const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
             const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+            const editedDocs = JSON.parse(sessionStorage.getItem("editedDocs") || "[]");
 
             const vehicleNo =
                 ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
@@ -269,6 +270,7 @@ const SelfieVerification = () => {
                 mobile: value?.mobile || null,
                 lrNumber: value?.lrNumber || null,
                 documentDetails: ocrDetails,
+                editedDocs
             });
             localStorage.removeItem("driver_session");
 

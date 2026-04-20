@@ -20,6 +20,7 @@ model Guard_Master {
 
   Verified_Documents Driver_Documents[]
   RejectedVehicles   Rejected_Vehicle[]
+  Reviewed_Edits     Edited_Documents[]
 
   @@map("GUARD_MASTER")
 }
@@ -67,6 +68,7 @@ model Driver_Checkin {
   Documents              Driver_Documents[]
   weighbridge            Weighbridge?
   RejectedVehicle        Rejected_Vehicle[] 
+  EditedDocuments       Edited_Documents[]
 
   @@map("DRIVER_CHECKIN")
 
@@ -91,10 +93,37 @@ model Driver_Documents {
 
   Created_At           DateTime @default(now())
   Updated_At           DateTime @updatedAt
+  EditedEntries        Edited_Documents[]
 
   @@map("DRIVER_DOCUMENTS")
   @@index([Driver_Checkin_Id])
   @@index([Verified_By])
+}
+
+model Edited_Documents {
+  Id                 Int       @id @default(autoincrement())
+
+  Driver_Checkin_Id  Int?
+  Driver_Document_Id Int?
+
+  Doc_Type           String
+  Edited_Fields      Json
+  Image_Path         String?
+
+  Reviewed           Boolean   @default(false)
+  Reviewed_By        Int?
+
+  Created_At         DateTime  @default(now())
+  Updated_At         DateTime  @updatedAt
+
+  Driver_Checkin     Driver_Checkin?   @relation(fields: [Driver_Checkin_Id], references: [Id])
+  Driver_Document    Driver_Documents? @relation(fields: [Driver_Document_Id], references: [Id])
+  Guard              Guard_Master?     @relation(fields: [Reviewed_By], references: [Guard_Id])
+
+  @@map("EDITED_DOCUMENTS")
+  @@index([Driver_Checkin_Id])
+  @@index([Driver_Document_Id])
+  @@index([Reviewed_By])
 }
 
 model Driver_Temp_Upload {

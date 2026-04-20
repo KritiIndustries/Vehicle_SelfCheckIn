@@ -395,4 +395,20 @@ export const rejectVehicle = asyncHandler(async (req, res) => {
     );
 });
 
+export const getEditedDocuments = asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) throw new ApiError(400, "Invalid id");
+
+    const edited = await prisma.edited_Documents.findMany({
+        where: { Driver_Checkin_Id: id },
+        orderBy: { Created_At: 'desc' },
+        include: {
+            Driver_Document: { select: { Id: true, Doc_Type: true, Image_Path: true } },
+            Guard: { select: { Guard_Id: true, Name: true } }
+        }
+    });
+
+    return res.status(200).json(new ApiResponse(200, edited, "Edited documents fetched"));
+});
+
 

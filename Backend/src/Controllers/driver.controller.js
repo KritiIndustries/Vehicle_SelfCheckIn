@@ -501,6 +501,30 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
                 Zgp: insertResult.responseData?.Message || "N/A",
             },
         });
+        if (checkin) {
+            // ✅ Get edited data from frontend
+            const editedDocs = req.body.editedDocs || [];
+
+            for (const edit of editedDocs) {
+                // find matching document
+                const doc = await tx.driver_Documents.findFirst({
+                    where: {
+                        Driver_Checkin_Id: checkin.Id,
+                        Doc_Type: edit.docType.toLowerCase()
+                    }
+                });
+
+                await tx.edited_Documents.create({
+                    data: {
+                        Driver_Checkin_Id: checkin.Id,
+                        Driver_Document_Id: doc?.Id || null,
+                        Doc_Type: edit.docType,
+                        Edited_Fields: edit.editedFields,
+                        Image_Path: edit.imagePath ?? null
+                    }
+                });
+            }
+        }
 
 
         // for (const upload of tempUploads) {
@@ -631,4 +655,29 @@ export const uploadSingleDocument = asyncHandler(async (req, res) => {
     } catch (error) {
         throw new ApiError(500, `${type} upload failed: ${error.message}`);
     }
+});
+
+// Save edited document fields submitted by user (from DocumentReview)
+export const saveEditedDocument = asyncHandler(async (req, res) => {
+    const { driverCheckinId, driverDocumentId, docType, editedFields, imagePath } = req.body;
+
+    if (!docType || !editedFields) {
+        throw new ApiError(400, "docType and editedFields are required");
+    }
+
+    // driverCheckinId optional, but prefer numeric if provided
+    const checkinId = driverCheckinId ? Number(driverCheckinId) : null;
+    const docId = driverDocumentId ? Number(driverDocumentId) : null;
+
+    const record = await prisma.edited_Documents.create({
+        data: {
+            Driver_Checkin_Id: checkinId ?? undefined,
+            Driver_Document_Id: docId ?? undefined,
+            Doc_Type: docType,
+            Edited_Fields: editedFields,
+            Image_Path: imagePath ?? undefined,
+        },
+    });
+
+    return res.status(201).json(new ApiResponse(201, record, "Edited document saved"));
 });
