@@ -32,7 +32,7 @@ const formatSapTime = (d) => {
 
 const postToZgp = async (payload) => {
     const url =
-        "http://182.74.4.110:1084/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet";
+        `${process.env.SAP_BASE_URL}/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
     const token = await fetchCsrfToken(url);
 
 

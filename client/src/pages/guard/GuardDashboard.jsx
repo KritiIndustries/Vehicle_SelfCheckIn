@@ -38,6 +38,7 @@ export default function GuardDashboard() {
     const [showPicker, setShowPicker] = useState(false);
     const fileInputRef = useRef(null);
     const [numberPlateUploaded, setNumberPlateUploaded] = useState(false);
+    const [uploadLoading, setUploadLoading] = useState(false);
 
     const fetchVehicles = async () => {
         try {
@@ -434,11 +435,23 @@ export default function GuardDashboard() {
                                     color: "hsl(var(--primary-foreground))",
                                 }}
                             >
-                                {numberPlateUploaded
+                                {/* {numberPlateUploaded
                                     ? "✓ Number Plate Uploaded"
                                     : !allDocsViewed
                                         ? "Upload Number Plate (View all docs first)"
-                                        : "Upload Number Plate"}
+                                        : "Upload Number Plate"} */}
+                                {uploadLoading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : numberPlateUploaded ? (
+                                    "✓ Number Plate Uploaded"
+                                ) : !allDocsViewed ? (
+                                    "Upload Number Plate (View all docs first)"
+                                ) : (
+                                    "Upload Number Plate"
+                                )}
                             </button>
                         )}
 
@@ -881,6 +894,7 @@ export default function GuardDashboard() {
                     if (!file || !selectedVehicle) return;
 
                     try {
+                        setUploadLoading(true);
                         const formData = new FormData();
                         formData.append("id", selectedVehicle.id);
                         formData.append("numberPlate", file);
@@ -899,6 +913,9 @@ export default function GuardDashboard() {
                     } catch (err) {
                         console.error(err);
                         toast.error("Upload failed ❌");
+                    }
+                    finally {
+                        setUploadLoading(false);
                     }
 
                     e.target.value = "";

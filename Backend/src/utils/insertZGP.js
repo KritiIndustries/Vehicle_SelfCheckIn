@@ -43,8 +43,7 @@ import axios from "axios";
 const insertZGP = async (data, token) => {
     try {
 
-        const url = `http://182.74.4.110:1084/sap/opu/odata/sap/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
-
+        const url = `${process.env.SAP_BASE_URL}/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
         const now = new Date();
         // ✅ Always use IST (UTC+5:30) regardless of server timezone
         const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in ms
