@@ -10,6 +10,7 @@ import authRoutes from "./Routes/auth.routes.js";
 import { weighbridgeUpdate } from "./Controllers/weighbridge.controller.js";
 import cors from "cors";
 import { basicAuth } from "./Middlewares/basicAuth.js";
+import aisensyRoutes from "./Routes/aisensy.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/driver", driverRoutes);
 app.use("/api/auth", authRoutes);
 app.use('/api/weighbridge', basicAuth, weighbridgeUpdate);
+app.use('/api/aisensy', aisensyRoutes);
 
 // Importing Routes
 

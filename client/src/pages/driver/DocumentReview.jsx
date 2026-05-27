@@ -159,8 +159,64 @@ const DocumentReview = () => {
 
   // ✅ Helper — border class based on expiry
 
+  const validateFields = () => {
+    const validations = [
+      {
+        value: docs.dl.name,
+        message: "Driver Name is required",
+      },
+      {
+        value: docs.dl.licenseNo,
+        message: "License Number is required",
+      },
+      {
+        value: docs.dl.expiryDate,
+        message: "DL Expiry Date is required",
+      },
 
+      {
+        value: docs.insurance.policyNo,
+        message: "Policy Number is required",
+      },
+      {
+        value: docs.insurance.expiryDate,
+        message: "Insurance Expiry Date is required",
+      },
+
+      {
+        value: docs.rc.vehicleNo,
+        message: "Vehicle Number is required",
+      },
+      {
+        value: docs.rc.chassisNo,
+        message: "Chassis Number is required",
+      },
+      {
+        value: docs.rc.expiryDate,
+        message: "RC Expiry Date is required",
+      },
+
+      {
+        value: docs.fitness.expiryDate,
+        message: "Fitness Expiry Date is required",
+      },
+    ];
+
+    for (const field of validations) {
+      if (!field.value || !field.value.toString().trim()) {
+        toast.error(field.message);
+        speak(field.message);
+        return false;
+      }
+    }
+
+    return true;
+  };
   const handleNext = async () => {
+    // ✅ Empty field validation
+    const isValid = validateFields();
+
+    if (!isValid) return;
     if (hasExpiredDoc) {
       const expiredNames = [
         expiredDocs.dl && "Driving License",
@@ -191,7 +247,6 @@ const DocumentReview = () => {
       }
       sessionStorage.setItem("editedDocs", JSON.stringify(editedData));
       sessionStorage.setItem("ocrConfirmedData", JSON.stringify(docs));
-      //TODO:UNComment below line to navigate to selfie page after saving edited documents
       navigate("/driver/selfie");
 
     } catch (err) {

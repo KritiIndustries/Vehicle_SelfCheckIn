@@ -317,10 +317,10 @@ const SelfieVerification = () => {
                     />
                     <div className="px-4 py-3 text-center">
                         <p className="text-sm font-medium text-foreground">
-                            Stand with empty truck behind you.
+                            Please Take Number Plate Photo 
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            खाली ट्रक के साथ खड़े हों
+                            कृपया नंबर प्लेट की फोटो लीजिए
                         </p>
                     </div>
                 </div>
@@ -356,13 +356,13 @@ const SelfieVerification = () => {
                         className="btn-outline-primary"
                     >
                         <Camera className="w-5 h-5" />
-                        Take Selfie / सेल्फी लें
+                        Take Number Plate Photo / नंबर प्लेट की फोटो लें
                     </button>
                 ) : (
                     uploaded && (
                         <div className="bg-success/10 border border-success/20 rounded-xl p-4 text-center">
                             <p className="text-success font-semibold">
-                                ✓ Selfie uploaded successfully
+                                ✓ Number Plate Photo uploaded successfully
                             </p>
                             <button
                                 onClick={openCamera}
