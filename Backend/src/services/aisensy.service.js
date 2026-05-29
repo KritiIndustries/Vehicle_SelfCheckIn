@@ -28,31 +28,48 @@ export const processAisensyWebhook = async (
 
         const messageType =
             message.message_type;
+        // Correct Name Field
+        const userName = message.userName || "";
 
         let imageUrl = "";
 
         // Extract image URL if message type is IMAGE
+        // IMAGE MESSAGE
         if (messageType === "IMAGE") {
             imageUrl =
-                message?.message_content
-                    ?.image?.url || "";
+                message?.message_content?.url || "";
+        }
+
+        // For TEXT and BUTTON_REPLY
+        // Store content inside image_url column
+        else if (messageType === "TEXT") {
+
+            imageUrl =
+                (message?.message_content?.text || "")
+                    .replace(/[^\x20-\x7E\u0900-\u097F]/g, "")
+                    .trim();
+        }
+
+        else if (messageType === "BUTTON_REPLY") {
+
+            imageUrl =
+                message?.message_content?.title || "";
         }
 
         // Convert timestamp
         const whatsappDate =
-            message.sent_at;
+            message.sent_at || Date.now();
 
         // Insert into database
         await saveMessageToDatabase({
             senderName:
-                message?.message_content
-                    ?.senderName || "",
+                userName || message.userName || "",
             phoneNumber,
             messageId,
             imageUrl,
             messageType,
             campaignName:
-                message?.campaign?.name || "",
+                message?.campaign || "",
             createdAtWhatsapp: whatsappDate,
         });
 
