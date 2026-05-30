@@ -77,26 +77,55 @@ export const exportToExcel = asyncHandler(
                 ORDER BY id DESC
             `);
 
-            const excelData = rows.map(
-                (item) => ({
+            // const excelData = rows.map(
+            //     (item) => ({
+            //         Name: item.name,
+            //         Number: item.phone_number,
+            //         Image: item.image_url,
+            //         Type: item.message_type,
+            //         Campaign:
+            //             item.campaign_name,
+            //         Date: new Date(
+            //             Number(
+            //                 item.created_at_whatsapp
+            //             )
+            //         ).toLocaleDateString(),
+            //         Time: new Date(
+            //             Number(
+            //                 item.created_at_whatsapp
+            //             )
+            //         ).toLocaleTimeString(),
+            //     })
+            // );
+
+            const excelData = rows.map((item) => {
+                const date = new Date(
+                    Number(item.created_at_whatsapp)
+                );
+
+                return {
                     Name: item.name,
                     Number: item.phone_number,
                     Image: item.image_url,
                     Type: item.message_type,
-                    Campaign:
-                        item.campaign_name,
-                    Date: new Date(
-                        Number(
-                            item.created_at_whatsapp
-                        )
-                    ).toLocaleDateString(),
-                    Time: new Date(
-                        Number(
-                            item.created_at_whatsapp
-                        )
-                    ).toLocaleTimeString(),
-                })
-            );
+                    Campaign: item.campaign_name,
+
+                    Date: date.toLocaleDateString(
+                        "en-GB",
+                        {
+                            timeZone: "Asia/Kolkata",
+                        }
+                    ), // DD/MM/YYYY
+
+                    Time: date.toLocaleTimeString(
+                        "en-IN",
+                        {
+                            timeZone: "Asia/Kolkata",
+                            hour12: false,
+                        }
+                    ), // HH:mm:ss
+                };
+            });
 
             const worksheet =
                 XLSX.utils.json_to_sheet(
