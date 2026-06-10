@@ -58,24 +58,24 @@ const App = () => (
             </GeoGuard>
           } />
           <Route path="/driver/documents" element={
-            <GeoGuard radius={driverRadius}>
-              <DocumentUpload />
-            </GeoGuard>
+            // <GeoGuard radius={driverRadius}>
+            <DocumentUpload />
+            // </GeoGuard>
           } />
           <Route path="/driver/doc-review" element={
-            <GeoGuard radius={driverRadius}>
-              <DocumentReview />
-            </GeoGuard>
+            // <GeoGuard radius={driverRadius}>
+            <DocumentReview />
+            // </GeoGuard>
           } />
           <Route path="/driver/selfie" element={
-            <GeoGuard radius={driverRadius}>
-              <SelfieVerification />
-            </GeoGuard>
+            // <GeoGuard radius={driverRadius}>
+            <SelfieVerification />
+            // </GeoGuard>
           } />
           <Route path="/driver/success" element={
-            <GeoGuard radius={driverRadius}>
-              <CheckinSuccess />
-            </GeoGuard>
+            // <GeoGuard radius={driverRadius}>
+            <CheckinSuccess />
+            // </GeoGuard>
           } />
 
           {/* ================= GUARD ROUTES (GEOFENCED) ================= */}
