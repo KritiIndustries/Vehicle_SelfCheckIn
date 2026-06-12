@@ -108,3 +108,16 @@ export const fixCommonOCRMistakes = (text) => {
     // .replace(/S/g, "5")
     // .replace(/B/g, "8");
 };
+
+export const getVehiclePrefix = (vehicleNo) => {
+    const clean = vehicleNo
+        ?.toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+
+    if (!clean) return "";
+
+    // MP09AA9822 => MP09AA
+    const match = clean.match(/^([A-Z]{2}\d{1,2}[A-Z]{1,3})/);
+
+    return match ? match[1] : clean;
+};

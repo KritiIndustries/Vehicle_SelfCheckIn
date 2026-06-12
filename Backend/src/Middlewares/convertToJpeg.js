@@ -109,54 +109,100 @@ import path from "path";
 // Install: npm install p-queue
 const conversionQueue = new PQueue({ concurrency: 10 }); // max 10 at once
 
+// export const convertToJpeg = async (req, res, next) => {
+//     // if (!req.files || req.files.length === 0) return next();
+//     if (!req.file) return next();
+
+//     try {
+//         const converted = await conversionQueue.add(async () => {
+//             return await Promise.all(
+//                 req.files.map(async (file) => {
+//                     const ext = path.extname(file.originalname).toLowerCase();
+
+//                     if (file.mimetype === "application/pdf" || ext === ".pdf") {
+//                         return file;
+//                     }
+
+//                     let jpegBuffer;
+
+//                     if (
+//                         ext === ".heic" || ext === ".heif" ||
+//                         file.mimetype === "image/heic" ||
+//                         file.mimetype === "image/heif" ||
+//                         file.mimetype === "application/octet-stream"
+//                     ) {
+//                         jpegBuffer = await heicConvert({
+//                             buffer: file.buffer,
+//                             format: "JPEG",
+//                             quality: 0.85
+//                         });
+//                     } else {
+//                         jpegBuffer = await sharp(file.buffer)
+//                             .jpeg({ quality: 85 })
+//                             .toBuffer();
+//                     }
+
+//                     return {
+//                         ...file,
+//                         buffer: jpegBuffer,
+//                         mimetype: "image/jpeg",
+//                         originalname: path.basename(file.originalname, ext) + ".jpeg",
+//                     };
+//                 })
+//             );
+//         });
+
+//         req.files = converted;
+//         next();
+//     } catch (err) {
+//         return res.status(400).json({
+//             success: false,
+//             message: "Image conversion failed: " + err.message
+//         });
+//     }
+// };
+
 export const convertToJpeg = async (req, res, next) => {
-    if (!req.files || req.files.length === 0) return next();
+    if (!req.file) return next();
 
     try {
-        const converted = await conversionQueue.add(async () => {
-            return await Promise.all(
-                req.files.map(async (file) => {
-                    const ext = path.extname(file.originalname).toLowerCase();
+        const file = req.file;
 
-                    if (file.mimetype === "application/pdf" || ext === ".pdf") {
-                        return file;
-                    }
+        const ext = path.extname(file.originalname).toLowerCase();
 
-                    let jpegBuffer;
+        let jpegBuffer;
 
-                    if (
-                        ext === ".heic" || ext === ".heif" ||
-                        file.mimetype === "image/heic" ||
-                        file.mimetype === "image/heif" ||
-                        file.mimetype === "application/octet-stream"
-                    ) {
-                        jpegBuffer = await heicConvert({
-                            buffer: file.buffer,
-                            format: "JPEG",
-                            quality: 0.85
-                        });
-                    } else {
-                        jpegBuffer = await sharp(file.buffer)
-                            .jpeg({ quality: 85 })
-                            .toBuffer();
-                    }
+        if (
+            ext === ".heic" ||
+            ext === ".heif" ||
+            file.mimetype === "image/heic" ||
+            file.mimetype === "image/heif"
+        ) {
+            jpegBuffer = await heicConvert({
+                buffer: file.buffer,
+                format: "JPEG",
+                quality: 0.9
+            });
+        } else {
+            jpegBuffer = await sharp(file.buffer)
+                .jpeg({ quality: 90 })
+                .toBuffer();
+        }
 
-                    return {
-                        ...file,
-                        buffer: jpegBuffer,
-                        mimetype: "image/jpeg",
-                        originalname: path.basename(file.originalname, ext) + ".jpeg",
-                    };
-                })
-            );
-        });
+        req.file = {
+            ...file,
+            buffer: jpegBuffer,
+            mimetype: "image/jpeg",
+            originalname:
+                path.basename(file.originalname, ext) + ".jpg"
+        };
 
-        req.files = converted;
         next();
+
     } catch (err) {
         return res.status(400).json({
             success: false,
-            message: "Image conversion failed: " + err.message
+            message: err.message
         });
     }
-};
+}

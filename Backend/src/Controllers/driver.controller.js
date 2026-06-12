@@ -64,7 +64,7 @@ import parseRC from "../services/parsers/parseRC.js";
 import parseFitness from "../services/parsers/parseFitness.js";
 import parseInsurance from "../services/parsers/parseInsurance.js";
 import { formatIST } from "../services/dates.service.js";
-import { cleanVehicleNo, extractVehicleNumbersFromSelfie } from "../services/extractVehicleNumberFromSelfie.js";
+import { cleanVehicleNo, extractVehicleNumbersFromSelfie, getVehiclePrefix } from "../services/extractVehicleNumberFromSelfie.js";
 
 
 
@@ -295,20 +295,34 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         );
     }
 
-    const cleanExpected = cleanVehicleNo(vehicleNo);
+    // const cleanExpected = cleanVehicleNo(vehicleNo);
 
-    // 🔥 STRICT MATCH ONLY (PRODUCTION SAFE)
-    // 🔥 FULL + PARTIAL MATCH SUPPORT
+    // // 🔥 STRICT MATCH ONLY (PRODUCTION SAFE)
+    // // 🔥 FULL + PARTIAL MATCH SUPPORT
+    // const match = detectedList.find(v => {
+    //     const cleanDetected = cleanVehicleNo(v);
+
+    //     // ✅ full match
+    //     if (cleanDetected === cleanExpected) return true;
+
+    //     // ✅ prefix match (MH18AA matches MH18AA9822)
+    //     if (cleanExpected.startsWith(cleanDetected)) return true;
+
+    //     return false;
+    // });
+    //matching on prefix is starting 6 digits
+
+    const expectedPrefix = getVehiclePrefix(vehicleNo);
+
     const match = detectedList.find(v => {
-        const cleanDetected = cleanVehicleNo(v);
+        const detectedPrefix = getVehiclePrefix(v);
 
-        // ✅ full match
-        if (cleanDetected === cleanExpected) return true;
+        console.log({
+            detected: detectedPrefix,
+            expected: expectedPrefix
+        });
 
-        // ✅ prefix match (MH18AA matches MH18AA9822)
-        if (cleanExpected.startsWith(cleanDetected)) return true;
-
-        return false;
+        return detectedPrefix === expectedPrefix;
     });
 
     if (!match) {
