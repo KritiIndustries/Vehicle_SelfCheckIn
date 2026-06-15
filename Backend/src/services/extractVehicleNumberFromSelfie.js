@@ -141,13 +141,23 @@ export const extractVehiclePrefixesFromSelfie = async (imageUrl) => {
 
     console.log("OCR:", normalized);
 
-    const text = normalized
-        .join(" ")
-        .toUpperCase()
-        .replace(/IND/g, " ") // ignore IND
-        .replace(/[^A-Z0-9 ]/g, " ");
+    const results = new Set();
 
-    const matches = text.match(/[A-Z]{2}\d{1,2}/g) || [];
+    for (const line of normalized) {
 
-    return [...new Set(matches)];
+        const clean = line
+            .toUpperCase()
+            .replace(/IND/g, "")
+            .replace(/[^A-Z0-9]/g, "");
+
+        const match = clean.match(/[A-Z]{2}\d{1,2}/);
+
+        if (match) {
+            results.add(match[0]);
+        }
+    }
+
+    console.log("PREFIXES:", [...results]);
+
+    return [...results];
 };
