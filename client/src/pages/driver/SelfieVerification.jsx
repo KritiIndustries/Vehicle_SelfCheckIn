@@ -131,11 +131,13 @@ const SelfieVerification = () => {
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        console.log(file.size);
+        console.log(file.type);
 
-        // ✅ Validate file size (10MB max)
-        if (file.size > 10 * 1024 * 1024) {
-            toast.error("File size must be less than 10MB");
-            speak("फ़ाइल का आकार 10MB से कम होना चाहिए");
+        // ✅ Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("File size must be less than 5MB");
+            speak("फ़ाइल का आकार 5MB से कम होना चाहिए");
             return;
         }
 
@@ -162,6 +164,10 @@ const SelfieVerification = () => {
             const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
             const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
             const vehicleNo = ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+            if (!ocrDetails?.rc?.vehicleNo) {
+                toast.error("Vehicle number not found");
+                return;
+            }
 
             // ✅ Create preview URL and track it for cleanup
             objectUrl = URL.createObjectURL(file);

@@ -42,6 +42,15 @@ const getSessionId = () => {
     return sessionId;
 };
 
+const getDriverDetailsFromStorage = () => {
+    try {
+        return JSON.parse(sessionStorage.getItem("driverDetails") || "null");
+    } catch (error) {
+        console.error("Failed to read driver details from sessionStorage", error);
+        return null;
+    }
+};
+
 // const DocumentUpload = () => {
 //     const navigate = useNavigate();
 //     const location = useLocation();
@@ -734,7 +743,7 @@ const getSessionId = () => {
 const DocumentUpload = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const driverDetails = location.state;
+    const driverDetails = location.state || getDriverDetailsFromStorage();
 
     if (!driverDetails) {
         return <div className="mobile-container">No data found</div>;
