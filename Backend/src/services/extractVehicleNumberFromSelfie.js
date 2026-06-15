@@ -121,3 +121,33 @@ export const getVehiclePrefix = (vehicleNo) => {
 
     return match ? match[1] : clean;
 };
+
+export const getVehicleStateRTO = (vehicleNo) => {
+    const clean = vehicleNo
+        ?.toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+
+    if (!clean) return "";
+
+    const match = clean.match(/^([A-Z]{2}\d{1,2})/);
+
+    return match ? match[1] : "";
+};
+
+export const extractVehiclePrefixesFromSelfie = async (imageUrl) => {
+    const lines = await extractTextFromS3Url(imageUrl);
+
+    const normalized = normalizeText(lines);
+
+    console.log("OCR:", normalized);
+
+    const text = normalized
+        .join(" ")
+        .toUpperCase()
+        .replace(/IND/g, " ") // ignore IND
+        .replace(/[^A-Z0-9 ]/g, " ");
+
+    const matches = text.match(/[A-Z]{2}\d{1,2}/g) || [];
+
+    return [...new Set(matches)];
+};

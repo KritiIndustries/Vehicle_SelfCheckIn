@@ -132,10 +132,10 @@ const SelfieVerification = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // ✅ Validate file size (5MB max)
-        if (file.size > 5 * 1024 * 1024) {
-            toast.error("File size must be less than 5MB");
-            speak("फ़ाइल का आकार 5MB से कम होना चाहिए");
+        // ✅ Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("File size must be less than 10MB");
+            speak("फ़ाइल का आकार 10MB से कम होना चाहिए");
             return;
         }
 
@@ -317,7 +317,7 @@ const SelfieVerification = () => {
                     />
                     <div className="px-4 py-3 text-center">
                         <p className="text-sm font-medium text-foreground">
-                            Please Take Number Plate Photo 
+                            Please Take Number Plate Photo
                         </p>
                         <p className="text-xs text-muted-foreground">
                             कृपया नंबर प्लेट की फोटो लीजिए

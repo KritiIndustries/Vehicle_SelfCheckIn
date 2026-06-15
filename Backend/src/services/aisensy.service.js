@@ -73,9 +73,9 @@ export const processAisensyWebhook = async (
             createdAtWhatsapp: whatsappDate,
         });
 
-        console.log(
-            `Webhook processed for message ID: ${messageId}`
-        );
+        // console.log(
+        //     `Webhook processed for message ID: ${messageId}`
+        // );
 
     } catch (err) {
         console.error(
@@ -127,9 +127,9 @@ export const saveMessageToDatabase =
                 ]
             );
 
-            console.log(
-                "Message saved to database"
-            );
+            // console.log(
+            //     "Message saved to database"
+            // );
 
         } catch (err) {
             // Handle duplicate entry

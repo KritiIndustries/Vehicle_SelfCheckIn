@@ -64,7 +64,7 @@ import parseRC from "../services/parsers/parseRC.js";
 import parseFitness from "../services/parsers/parseFitness.js";
 import parseInsurance from "../services/parsers/parseInsurance.js";
 import { formatIST } from "../services/dates.service.js";
-import { cleanVehicleNo, extractVehicleNumbersFromSelfie, getVehiclePrefix } from "../services/extractVehicleNumberFromSelfie.js";
+import { cleanVehicleNo, extractVehicleNumbersFromSelfie, extractVehiclePrefixesFromSelfie, getVehiclePrefix, getVehicleStateRTO } from "../services/extractVehicleNumberFromSelfie.js";
 
 
 
@@ -286,7 +286,8 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     }
 
     // 🔥 DETECT ALL VEHICLE NUMBERS
-    const detectedList = await extractVehicleNumbersFromSelfie(url);
+    // const detectedList = await extractVehicleNumbersFromSelfie(url);
+    const detectedList = await extractVehiclePrefixesFromSelfie(url);
 
     if (!detectedList.length) {
         throw new ApiError(
@@ -312,18 +313,25 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     // });
     //matching on prefix is starting 6 digits
 
-    const expectedPrefix = getVehiclePrefix(vehicleNo);
+    //Ignoring last 4 characters
+    // const expectedPrefix = getVehiclePrefix(vehicleNo);
 
-    const match = detectedList.find(v => {
-        const detectedPrefix = getVehiclePrefix(v);
+    // const match = detectedList.find(v => {
+    //     const detectedPrefix = getVehiclePrefix(v);
 
-        console.log({
-            detected: detectedPrefix,
-            expected: expectedPrefix
-        });
+    //     console.log({
+    //         detected: detectedPrefix,
+    //         expected: expectedPrefix
+    //     });
 
-        return detectedPrefix === expectedPrefix;
-    });
+    //     return detectedPrefix === expectedPrefix;
+    // });
+    //Get strarting 4 characters as prefix and match with expected prefix
+    const expectedPrefix = getVehicleStateRTO(vehicleNo);
+
+    const match = detectedList.find(
+        prefix => prefix === expectedPrefix
+    );
 
     if (!match) {
         throw new ApiError(
