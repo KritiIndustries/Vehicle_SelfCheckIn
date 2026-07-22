@@ -23,8 +23,11 @@ import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner";
 import { fromTheme } from "tailwind-merge";
 import { Button } from "@/components/ui/button";
+import { isBrowserRenderableImage, optimizeImageForUpload } from "@/services/image.service";
 
 const API = import.meta.env.VITE_API_BASE_URL;
+const MAX_UPLOAD_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_SOURCE_IMAGE_SIZE = 25 * 1024 * 1024;
 
 const docTypes = [
     { key: "dl", label: "Driving License", labelHi: "ड्राइविंग लाइसेंस", icon: FileText },
@@ -752,6 +755,7 @@ const DocumentUpload = () => {
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
     const pdfInputRef = useRef(null);
+    const previewUrlsRef = useRef(new Set());
 
     const [docs, setDocs] = useState({});
     const [showPicker, setShowPicker] = useState(null);
@@ -764,6 +768,19 @@ const DocumentUpload = () => {
     useEffect(() => {
         speak("कृपया अपने दस्तावेज़ अपलोड करें");
     }, [speak, toggleAudio]);
+
+    useEffect(() => {
+        return () => {
+            previewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+            previewUrlsRef.current.clear();
+        };
+    }, []);
+
+    const revokePreview = (url) => {
+        if (!url) return;
+        URL.revokeObjectURL(url);
+        previewUrlsRef.current.delete(url);
+    };
 
     const openPicker = (key) => {
         setCurrentDocKey(key);
@@ -880,8 +897,9 @@ const DocumentUpload = () => {
         speak(`${key} अपलोड विफल। कृपया दोबारा कोशिश करें।`);
     };
 
-    const handleFileSelect = (file) => {
-        if (!file || !currentDocKey) return;
+    const handleFileSelect = async (file) => {
+        const docKey = currentDocKey;
+        if (!file || !docKey) return;
 
         const allowedMimeTypes = [
             "image/jpeg", "image/jpg", "image/png", "image/webp",
@@ -895,34 +913,90 @@ const DocumentUpload = () => {
         ];
 
         const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+        const isPdf = file.type === "application/pdf" || ext === ".pdf";
+        const canOptimize = !isPdf && isBrowserRenderableImage(file);
 
         if (
             (!file.type && allowedExtensions.includes(ext)) ||
             (allowedMimeTypes.includes(file.type) && allowedExtensions.includes(ext))
         ) {
-            if (file.size > 10 * 1024 * 1024) {
+            if (isPdf && file.size > MAX_UPLOAD_FILE_SIZE) {
                 toast.error("File too large — max 10MB");
                 return;
             }
 
-            const preview = file.type.startsWith("image/") && ext !== ".heic" && ext !== ".heif"
-                ? URL.createObjectURL(file)
-                : null;
+            if (!isPdf && !canOptimize && file.size > MAX_UPLOAD_FILE_SIZE) {
+                toast.error("Image too large - please use a smaller image");
+                return;
+            }
+
+            if (canOptimize && file.size > MAX_SOURCE_IMAGE_SIZE) {
+                toast.error("Image too large - please capture a smaller photo");
+                return;
+            }
+
+            setShowPicker(null);
 
             setDocs(prev => ({
                 ...prev,
-                [currentDocKey]: {
-                    preview,
+                [docKey]: {
+                    preview: null,
                     progress: 0,
-                    uploading: false,
+                    uploading: true,
                     uploaded: false,
                     error: null,
                     file
                 }
             }));
 
+            let uploadFile = file;
+            if (canOptimize) {
+                uploadFile = await optimizeImageForUpload(file);
+            }
+
+            if (uploadFile.size > MAX_UPLOAD_FILE_SIZE) {
+                setDocs(prev => ({
+                    ...prev,
+                    [docKey]: {
+                        ...prev[docKey],
+                        uploading: false,
+                        uploaded: false,
+                        progress: 0,
+                        error: "File too large"
+                    }
+                }));
+                toast.error("File too large - please use a smaller image");
+                return;
+            }
+
+            const preview = isBrowserRenderableImage(uploadFile)
+                ? URL.createObjectURL(uploadFile)
+                : null;
+
+            if (preview) {
+                previewUrlsRef.current.add(preview);
+            }
+
+            const oldPreview = docs[docKey]?.preview;
+            if (oldPreview && oldPreview !== preview) {
+                revokePreview(oldPreview);
+            }
+
+            setDocs(prev => ({
+                ...prev,
+                [docKey]: {
+                    ...prev[docKey],
+                    preview,
+                    progress: 0,
+                    uploading: false,
+                    uploaded: false,
+                    error: null,
+                    file: uploadFile
+                }
+            }));
+
             // ✅ Start upload immediately
-            uploadSingleDocument(currentDocKey, file);
+            uploadSingleDocument(docKey, uploadFile);
 
         } else {
             toast.error("Only images or PDF allowed");

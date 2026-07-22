@@ -26,6 +26,10 @@ const SelfieVerification = () => {
     const [uploading, setUploading] = useState(false);
     const [uploaded, setUploaded] = useState(false);
     const [progress, setProgress] = useState(0);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [showManualVehicleInput, setShowManualVehicleInput] = useState(false);
+    const [manualVehicleNo, setManualVehicleNo] = useState("");
+    const [uploadErrorMsg, setUploadErrorMsg] = useState("");
     const [timeLeft, setTimeLeft] = useState(300);
     const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
@@ -69,6 +73,10 @@ const SelfieVerification = () => {
         // ✅ Reset states for retake
         setPreview(null);
         setUploaded(false);
+        setSelectedFile(null);
+        setShowManualVehicleInput(false);
+        setManualVehicleNo("");
+        setUploadErrorMsg("");
         setProgress(0);
 
         fileInputRef.current.value = "";
@@ -131,6 +139,11 @@ const SelfieVerification = () => {
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
+
+        setSelectedFile(file);
+        setShowManualVehicleInput(false);
+        setUploadErrorMsg("");
+
         console.log(file.size);
         console.log(file.type);
 
@@ -165,7 +178,11 @@ const SelfieVerification = () => {
             const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
             const vehicleNo = ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
             if (!ocrDetails?.rc?.vehicleNo) {
-                toast.error("Vehicle number not found");
+                objectUrl = URL.createObjectURL(file);
+                setPreview(objectUrl);
+                setShowManualVehicleInput(true);
+                setUploadErrorMsg("RC number not available. कृपया वाहन नंबर यहां दर्ज करें।");
+                setUploading(false);
                 return;
             }
 
@@ -221,14 +238,26 @@ const SelfieVerification = () => {
             throw lastError;
 
         } catch (error) {
-            // ✅ Cleanup preview on failure
+            const errorMessage = error.response?.data?.message || "Selfie upload failed";
+            const isVerificationError = error.response?.status === 400 &&
+                (errorMessage.includes("Number Plate") || errorMessage.includes("एक जैसी नहीं"));
+
+            if (isVerificationError) {
+                setShowManualVehicleInput(true);
+                setUploadErrorMsg(errorMessage);
+                setUploaded(false);
+                toast.error(errorMessage);
+                speak(errorMessage);
+                return;
+            }
+
+            // ✅ Cleanup preview on failure for non-manual fallback errors
             if (objectUrl) {
                 URL.revokeObjectURL(objectUrl);
                 setPreview(null);
             }
             setUploaded(false);
 
-            // ✅ Specific error messages
             let message = "Selfie upload failed";
 
             if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
@@ -241,7 +270,7 @@ const SelfieVerification = () => {
                 message = "Session expired — please restart";
                 speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
             } else {
-                message = error.response?.data?.message || message;
+                message = errorMessage;
                 speak(message);
             }
 
@@ -255,6 +284,53 @@ const SelfieVerification = () => {
     /* FINALIZE CHECKIN */
     /* ========================= */
 
+    const submitManualVehicleNo = async () => {
+        if (!selectedFile) {
+            toast.error("Please select a vehicle photo first");
+            return;
+        }
+
+        const manualValue = manualVehicleNo.trim();
+        if (!manualValue) {
+            toast.error("Please enter the vehicle number manually");
+            return;
+        }
+
+        try {
+            setUploading(true);
+            setProgress(0);
+
+            const formData = new FormData();
+            formData.append("sessionId", sessionId);
+            formData.append("doNumber", value?.doNumber);
+            formData.append("vehicleNo", manualValue);
+            formData.append("manualVehicleNo", manualValue);
+            formData.append("selfie", selectedFile);
+
+            await axios.post(`${API}/api/driver/upload-selfie`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                timeout: 30000,
+                onUploadProgress: (progressEvent) => {
+                    const percent = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total
+                    );
+                    setProgress(percent);
+                },
+            });
+
+            setShowManualVehicleInput(false);
+            setUploadErrorMsg("");
+            setUploaded(true);
+            toast.success("Vehicle number accepted. You can now submit.");
+        } catch (error) {
+            const message = error.response?.data?.message || "Manual vehicle number submission failed";
+            toast.error(message);
+            speak(message);
+        } finally {
+            setUploading(false);
+        }
+    };
+
     const finalizeCheckin = async () => {
         try {
             setUploading(true);
@@ -263,7 +339,7 @@ const SelfieVerification = () => {
             const editedDocs = JSON.parse(sessionStorage.getItem("editedDocs") || "[]");
 
             const vehicleNo =
-                ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+                manualVehicleNo?.trim() || ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
             const driverName =
                 ocrDetails?.dl?.name || "Driver";
 
@@ -353,6 +429,35 @@ const SelfieVerification = () => {
                                 </p>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {showManualVehicleInput && !uploaded && (
+                    <div className="mb-4 rounded-2xl border border-warning/30 bg-warning/5 p-4">
+                        <p className="text-sm font-semibold text-warning">
+                            Unable to verify number plate from photo.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {uploadErrorMsg}
+                        </p>
+
+                        <label className="block mt-4 text-sm font-medium text-foreground">
+                            Enter vehicle number manually
+                        </label>
+                        <input
+                            value={manualVehicleNo}
+                            onChange={(e) => setManualVehicleNo(e.target.value)}
+                            placeholder="MH01AB1234"
+                            className="w-full mt-2 px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <button
+                            type="button"
+                            onClick={submitManualVehicleNo}
+                            disabled={uploading || !manualVehicleNo.trim()}
+                            className="btn-primary-full mt-3 disabled:opacity-50"
+                        >
+                            Use Manual Vehicle Number
+                        </button>
                     </div>
                 )}
 

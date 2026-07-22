@@ -61,6 +61,7 @@ const insertZGP = async (data, token) => {
             DriverName: data.driverName,
             TransporterCode: "92000001",
             DoNumber: data.doNo,
+            DriverPhone: data.mobile
         };
         console.log("Playload", payload);
 

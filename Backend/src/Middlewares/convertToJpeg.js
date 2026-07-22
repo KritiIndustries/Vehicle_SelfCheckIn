@@ -106,8 +106,7 @@ import PQueue from "p-queue";
 import sharp from "sharp";
 import heicConvert from "heic-convert";
 import path from "path";
-// Install: npm install p-queue
-const conversionQueue = new PQueue({ concurrency: 10 }); // max 10 at once
+const conversionQueue = new PQueue({ concurrency: 2 });
 
 // export const convertToJpeg = async (req, res, next) => {
 //     // if (!req.files || req.files.length === 0) return next();
@@ -162,47 +161,69 @@ const conversionQueue = new PQueue({ concurrency: 10 }); // max 10 at once
 //     }
 // };
 
+const convertFileToJpeg = async (file) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    if (file.mimetype === "application/pdf" || ext === ".pdf") {
+        return file;
+    }
+
+    const isHeic =
+        ext === ".heic" ||
+        ext === ".heif" ||
+        file.mimetype === "image/heic" ||
+        file.mimetype === "image/heif";
+
+    const imageBuffer = isHeic
+        ? Buffer.from(await heicConvert({
+            buffer: file.buffer,
+            format: "JPEG",
+            quality: 0.82
+        }))
+        : file.buffer;
+
+    const jpegBuffer = await sharp(imageBuffer)
+        .rotate()
+        .resize({
+            width: 1600,
+            height: 1600,
+            fit: "inside",
+            withoutEnlargement: true
+        })
+        .jpeg({ quality: 82, mozjpeg: true })
+        .toBuffer();
+
+    return {
+        ...file,
+        buffer: jpegBuffer,
+        size: jpegBuffer.length,
+        mimetype: "image/jpeg",
+        originalname: `${path.basename(file.originalname, ext)}.jpg`
+    };
+};
+
 export const convertToJpeg = async (req, res, next) => {
-    if (!req.file) return next();
+    const files = req.files || (req.file ? [req.file] : []);
+
+    if (files.length === 0) return next();
 
     try {
-        const file = req.file;
+        const converted = await conversionQueue.add(() =>
+            Promise.all(files.map(convertFileToJpeg))
+        );
 
-        const ext = path.extname(file.originalname).toLowerCase();
-
-        let jpegBuffer;
-
-        if (
-            ext === ".heic" ||
-            ext === ".heif" ||
-            file.mimetype === "image/heic" ||
-            file.mimetype === "image/heif"
-        ) {
-            jpegBuffer = await heicConvert({
-                buffer: file.buffer,
-                format: "JPEG",
-                quality: 0.9
-            });
+        if (req.files) {
+            req.files = converted;
         } else {
-            jpegBuffer = await sharp(file.buffer)
-                .jpeg({ quality: 90 })
-                .toBuffer();
+            req.file = converted[0];
         }
-
-        req.file = {
-            ...file,
-            buffer: jpegBuffer,
-            mimetype: "image/jpeg",
-            originalname:
-                path.basename(file.originalname, ext) + ".jpg"
-        };
 
         next();
 
     } catch (err) {
         return res.status(400).json({
             success: false,
-            message: err.message
+            message: `Image conversion failed: ${err.message}`
         });
     }
-}
+};

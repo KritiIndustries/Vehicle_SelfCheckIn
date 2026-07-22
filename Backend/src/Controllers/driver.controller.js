@@ -250,13 +250,14 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
         throw new ApiError(400, "No selfie uploaded");
     }
 
-    const { sessionId, doNumber, vehicleNo } = req.body;
+    const { sessionId, doNumber, vehicleNo, manualVehicleNo } = req.body;
+    const effectiveVehicleNo = (manualVehicleNo || vehicleNo || "").trim();
 
     if (!sessionId || typeof sessionId !== "string") {
         throw new ApiError(400, "Invalid sessionId");
     }
 
-    if (!vehicleNo) {
+    if (!effectiveVehicleNo) {
         throw new ApiError(400, "Vehicle number required");
     }
 
@@ -283,6 +284,31 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
 
     if (!url) {
         throw new ApiError(500, "S3 upload failed");
+    }
+
+    if (manualVehicleNo) {
+        // Manual fallback: accept the selfie with the entered vehicle number.
+        await prisma.driver_Temp_Upload.create({
+            data: {
+                Session_Id: sessionId,
+                Doc_Type: "selfie",
+                Image_Path: url,
+                Is_Selfie: true,
+                Created_At: new Date(),
+            },
+        });
+
+        return res.json(
+            new ApiResponse(
+                200,
+                {
+                    fileUrl: url,
+                    detectedVehicleNo: effectiveVehicleNo,
+                    manualVehicleNo: effectiveVehicleNo,
+                },
+                "Selfie uploaded with manual vehicle number"
+            )
+        );
     }
 
     // 🔥 DETECT ALL VEHICLE NUMBERS
@@ -336,7 +362,7 @@ export const uploadTempSelfie = asyncHandler(async (req, res) => {
     if (!match) {
         throw new ApiError(
             400,
-            `आपकी आरसी में ट्रक नंबर और आपकी सेल्फी में ट्रक नंबर प्लेट एक जैसी नहीं हैं।. ${detectedList.join(", ")}`
+            `आपकी आरसी में ट्रक नंबर और आपकी सेल्फी में ट्रक नंबर प्लेट एक जैसी नहीं हैं।.}`
         );
     }
 
