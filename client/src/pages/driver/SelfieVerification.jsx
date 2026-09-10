@@ -136,6 +136,152 @@ const SelfieVerification = () => {
 
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+    // const handleFileChange = async (e) => {
+    //     const file = e.target.files[0];
+    //     if (!file) return;
+
+    //     setSelectedFile(file);
+    //     setShowManualVehicleInput(false);
+    //     setUploadErrorMsg("");
+
+    //     console.log(file.size);
+    //     console.log(file.type);
+
+    //     // ✅ Validate file size (5MB max)
+    //     if (file.size > 5 * 1024 * 1024) {
+    //         toast.error("File size must be less than 5MB");
+    //         speak("फ़ाइल का आकार 5MB से कम होना चाहिए");
+    //         return;
+    //     }
+
+    //     // ✅ Validate file type
+    //     const allowedTypes = [
+    //         "image/jpeg", "image/jpg", "image/png", "image/webp",
+    //         "image/heic", "image/heif", "application/octet-stream"
+    //     ];
+    //     const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
+    //     const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+    //     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+    //         toast.error("Only image files allowed for selfie");
+    //         speak("केवल इमेज फ़ाइल अपलोड करें");
+    //         return;
+    //     }
+
+    //     let objectUrl = null;
+
+    //     try {
+    //         setUploading(true);
+    //         setProgress(0);
+
+    //         const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
+    //         const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+    //         const vehicleNo = ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+    //         if (!ocrDetails?.rc?.vehicleNo) {
+    //             objectUrl = URL.createObjectURL(file);
+    //             setPreview(objectUrl);
+    //             setShowManualVehicleInput(true);
+    //             setUploadErrorMsg("RC number not available. कृपया वाहन नंबर यहां दर्ज करें।");
+    //             setUploading(false);
+    //             return;
+    //         }
+
+    //         // ✅ Create preview URL and track it for cleanup
+    //         objectUrl = URL.createObjectURL(file);
+    //         setPreview(objectUrl);
+
+    //         const formData = new FormData();
+    //         formData.append("sessionId", sessionId);
+    //         formData.append("doNumber", value?.doNumber);
+    //         formData.append("vehicleNo", vehicleNo);
+    //         formData.append("selfie", file);
+
+    //         // ✅ Retry logic
+    //         let lastError = null;
+    //         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    //             try {
+    //                 await axios.post(`${API}/api/driver/upload-selfie`, formData, {
+    //                     headers: { "Content-Type": "multipart/form-data" },
+    //                     timeout: 30000, // ✅ 30 second timeout
+    //                     onUploadProgress: (progressEvent) => {
+    //                         const percent = Math.round(
+    //                             (progressEvent.loaded * 100) / progressEvent.total
+    //                         );
+    //                         setProgress(percent);
+    //                     },
+    //                 });
+
+    //                 // ✅ Success
+    //                 setUploaded(true);
+    //                 return; // exit retry loop
+
+    //             } catch (err) {
+    //                 lastError = err;
+
+    //                 const status = err.response?.status;
+
+    //                 // ✅ Don't retry on client errors (4xx)
+    //                 if (status && status >= 400 && status < 500) {
+    //                     throw err;
+    //                 }
+
+    //                 // ✅ Retry on network/server errors
+    //                 if (attempt < MAX_RETRIES) {
+    //                     toast.warning(`Upload failed, retrying... (${attempt}/${MAX_RETRIES})`);
+    //                     setProgress(0);
+    //                     await sleep(RETRY_DELAY * attempt); // exponential backoff
+    //                 }
+    //             }
+    //         }
+
+    //         // All retries failed
+    //         throw lastError;
+
+    //     } catch (error) {
+    //         const errorMessage = error.response?.data?.message || "Selfie upload failed";
+    //         const isVerificationError = error.response?.status === 400 &&
+    //             (errorMessage.includes("Number Plate") || errorMessage.includes("एक जैसी नहीं"));
+
+    //         if (isVerificationError) {
+    //             setShowManualVehicleInput(true);
+    //             setUploadErrorMsg(errorMessage);
+    //             setUploaded(false);
+    //             toast.error(errorMessage);
+    //             speak(errorMessage);
+    //             return;
+    //         }
+
+    //         // ✅ Cleanup preview on failure for non-manual fallback errors
+    //         if (objectUrl) {
+    //             URL.revokeObjectURL(objectUrl);
+    //             setPreview(null);
+    //         }
+    //         setUploaded(false);
+
+    //         let message = "Selfie upload failed";
+
+    //         if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
+    //             message = "Network error — please check your connection";
+    //             speak("नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।");
+    //         } else if (error.response?.status === 413) {
+    //             message = "File too large — please use a smaller image";
+    //             speak("फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।");
+    //         } else if (error.response?.status === 401) {
+    //             message = "Session expired — please restart";
+    //             speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
+    //         } else {
+    //             message = errorMessage;
+    //             speak(message);
+    //         }
+
+    //         toast.error(message);
+
+    //     } finally {
+    //         setUploading(false);
+    //     }
+    // };
+
+
     const handleFileChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -147,22 +293,41 @@ const SelfieVerification = () => {
         console.log(file.size);
         console.log(file.type);
 
-        // ✅ Validate file size (5MB max)
+        // Validate file size (5MB max)
         if (file.size > 5 * 1024 * 1024) {
             toast.error("File size must be less than 5MB");
             speak("फ़ाइल का आकार 5MB से कम होना चाहिए");
             return;
         }
 
-        // ✅ Validate file type
+        // Validate file type
         const allowedTypes = [
-            "image/jpeg", "image/jpg", "image/png", "image/webp",
-            "image/heic", "image/heif", "application/octet-stream"
+            "image/jpeg",
+            "image/jpg",
+            "image/png",
+            "image/webp",
+            "image/heic",
+            "image/heif",
+            "application/octet-stream"
         ];
-        const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"];
-        const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
 
-        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(ext)) {
+        const allowedExtensions = [
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp",
+            ".heic",
+            ".heif"
+        ];
+
+        const ext = file.name
+            .substring(file.name.lastIndexOf("."))
+            .toLowerCase();
+
+        if (
+            !allowedTypes.includes(file.type) &&
+            !allowedExtensions.includes(ext)
+        ) {
             toast.error("Only image files allowed for selfie");
             speak("केवल इमेज फ़ाइल अपलोड करें");
             return;
@@ -174,101 +339,220 @@ const SelfieVerification = () => {
             setUploading(true);
             setProgress(0);
 
-            const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
-            const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
-            const vehicleNo = ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+            const ocrDetailsRaw =
+                sessionStorage.getItem("ocrConfirmedData");
+
+            const ocrDetails = ocrDetailsRaw
+                ? JSON.parse(ocrDetailsRaw)
+                : null;
+
+            const vehicleNo =
+                ocrDetails?.rc?.vehicleNo ||
+                "UNKNOWN_VEHICLE";
+
             if (!ocrDetails?.rc?.vehicleNo) {
                 objectUrl = URL.createObjectURL(file);
+
                 setPreview(objectUrl);
                 setShowManualVehicleInput(true);
-                setUploadErrorMsg("RC number not available. कृपया वाहन नंबर यहां दर्ज करें।");
+                setUploadErrorMsg(
+                    "RC number not available. कृपया वाहन नंबर यहां दर्ज करें।"
+                );
+
                 setUploading(false);
                 return;
             }
 
-            // ✅ Create preview URL and track it for cleanup
+            // Create preview URL
             objectUrl = URL.createObjectURL(file);
             setPreview(objectUrl);
 
             const formData = new FormData();
+
             formData.append("sessionId", sessionId);
             formData.append("doNumber", value?.doNumber);
             formData.append("vehicleNo", vehicleNo);
             formData.append("selfie", file);
 
-            // ✅ Retry logic
+            // Retry logic
             let lastError = null;
-            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-                try {
-                    await axios.post(`${API}/api/driver/upload-selfie`, formData, {
-                        headers: { "Content-Type": "multipart/form-data" },
-                        timeout: 30000, // ✅ 30 second timeout
-                        onUploadProgress: (progressEvent) => {
-                            const percent = Math.round(
-                                (progressEvent.loaded * 100) / progressEvent.total
-                            );
-                            setProgress(percent);
-                        },
-                    });
 
-                    // ✅ Success
+            for (
+                let attempt = 1;
+                attempt <= MAX_RETRIES;
+                attempt++
+            ) {
+                try {
+                    const response = await axios.post(
+                        `${API}/api/driver/upload-selfie`,
+                        formData,
+                        {
+                            headers: {
+                                "Content-Type":
+                                    "multipart/form-data"
+                            },
+                            timeout: 30000,
+
+                            onUploadProgress: (
+                                progressEvent
+                            ) => {
+                                const percent =
+                                    Math.round(
+                                        (progressEvent.loaded *
+                                            100) /
+                                        progressEvent.total
+                                    );
+
+                                setProgress(percent);
+                            },
+                        }
+                    );
+
+                    // ==========================================
+                    // ⭐ GET CURRENT SELFIE IMAGE PATH
+                    // ==========================================
+
+                    const selfieImagePath =
+                        response.data?.data?.imagePath;
+
+                    console.log(
+                        "Current selfie uploaded:",
+                        selfieImagePath
+                    );
+
+                    if (!selfieImagePath) {
+                        throw new Error(
+                            "Selfie uploaded but image path was not returned"
+                        );
+                    }
+
+                    // ==========================================
+                    // ⭐ STORE CURRENT SELFIE PATH
+                    // ==========================================
+
+                    sessionStorage.setItem(
+                        "currentSelfieImagePath",
+                        selfieImagePath
+                    );
+
+                    console.log(
+                        "Selfie path stored in sessionStorage:",
+                        sessionStorage.getItem(
+                            "currentSelfieImagePath"
+                        )
+                    );
+
+                    // Success
                     setUploaded(true);
-                    return; // exit retry loop
+
+                    return;
 
                 } catch (err) {
                     lastError = err;
 
-                    const status = err.response?.status;
+                    const status =
+                        err.response?.status;
 
-                    // ✅ Don't retry on client errors (4xx)
-                    if (status && status >= 400 && status < 500) {
+                    // Don't retry 4xx
+                    if (
+                        status &&
+                        status >= 400 &&
+                        status < 500
+                    ) {
                         throw err;
                     }
 
-                    // ✅ Retry on network/server errors
+                    // Retry network/server errors
                     if (attempt < MAX_RETRIES) {
-                        toast.warning(`Upload failed, retrying... (${attempt}/${MAX_RETRIES})`);
+                        toast.warning(
+                            `Upload failed, retrying... (${attempt}/${MAX_RETRIES})`
+                        );
+
                         setProgress(0);
-                        await sleep(RETRY_DELAY * attempt); // exponential backoff
+
+                        await sleep(
+                            RETRY_DELAY * attempt
+                        );
                     }
                 }
             }
 
-            // All retries failed
             throw lastError;
 
         } catch (error) {
-            const errorMessage = error.response?.data?.message || "Selfie upload failed";
-            const isVerificationError = error.response?.status === 400 &&
-                (errorMessage.includes("Number Plate") || errorMessage.includes("एक जैसी नहीं"));
+            const errorMessage =
+                error.response?.data?.message ||
+                "Selfie upload failed";
+
+            const isVerificationError =
+                error.response?.status === 400 &&
+                (
+                    errorMessage.includes(
+                        "Number Plate"
+                    ) ||
+                    errorMessage.includes(
+                        "एक जैसी नहीं"
+                    )
+                );
 
             if (isVerificationError) {
                 setShowManualVehicleInput(true);
                 setUploadErrorMsg(errorMessage);
                 setUploaded(false);
+
                 toast.error(errorMessage);
                 speak(errorMessage);
+
                 return;
             }
 
-            // ✅ Cleanup preview on failure for non-manual fallback errors
+            // Cleanup preview
             if (objectUrl) {
                 URL.revokeObjectURL(objectUrl);
                 setPreview(null);
             }
+
+            // ⭐ Remove stale selfie path
+            sessionStorage.removeItem(
+                "currentSelfieImagePath"
+            );
+
             setUploaded(false);
 
-            let message = "Selfie upload failed";
+            let message =
+                "Selfie upload failed";
 
-            if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
-                message = "Network error — please check your connection";
-                speak("नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।");
-            } else if (error.response?.status === 413) {
-                message = "File too large — please use a smaller image";
-                speak("फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।");
-            } else if (error.response?.status === 401) {
-                message = "Session expired — please restart";
-                speak("सेशन समाप्त हो गया। कृपया फिर से शुरू करें।");
+            if (
+                error.code === "ECONNABORTED" ||
+                error.code === "ERR_NETWORK"
+            ) {
+                message =
+                    "Network error — please check your connection";
+
+                speak(
+                    "नेटवर्क की समस्या है। कृपया अपना कनेक्शन जांचें।"
+                );
+
+            } else if (
+                error.response?.status === 413
+            ) {
+                message =
+                    "File too large — please use a smaller image";
+
+                speak(
+                    "फ़ाइल बहुत बड़ी है। कृपया छोटी इमेज का उपयोग करें।"
+                );
+
+            } else if (
+                error.response?.status === 401
+            ) {
+                message =
+                    "Session expired — please restart";
+
+                speak(
+                    "सेशन समाप्त हो गया। कृपया फिर से शुरू करें।"
+                );
+
             } else {
                 message = errorMessage;
                 speak(message);
@@ -284,15 +568,69 @@ const SelfieVerification = () => {
     /* FINALIZE CHECKIN */
     /* ========================= */
 
+    // const submitManualVehicleNo = async () => {
+    //     if (!selectedFile) {
+    //         toast.error("Please select a vehicle photo first");
+    //         return;
+    //     }
+
+    //     const manualValue = manualVehicleNo.trim();
+    //     if (!manualValue) {
+    //         toast.error("Please enter the vehicle number manually");
+    //         return;
+    //     }
+
+    //     try {
+    //         setUploading(true);
+    //         setProgress(0);
+
+    //         const formData = new FormData();
+    //         formData.append("sessionId", sessionId);
+    //         formData.append("doNumber", value?.doNumber);
+    //         formData.append("vehicleNo", manualValue);
+    //         formData.append("manualVehicleNo", manualValue);
+    //         formData.append("selfie", selectedFile);
+
+    //         await axios.post(`${API}/api/driver/upload-selfie`, formData, {
+    //             headers: { "Content-Type": "multipart/form-data" },
+    //             timeout: 30000,
+    //             onUploadProgress: (progressEvent) => {
+    //                 const percent = Math.round(
+    //                     (progressEvent.loaded * 100) / progressEvent.total
+    //                 );
+    //                 setProgress(percent);
+    //             },
+    //         });
+
+    //         setShowManualVehicleInput(false);
+    //         setUploadErrorMsg("");
+    //         setUploaded(true);
+    //         toast.success("Vehicle number accepted. You can now submit.");
+    //     } catch (error) {
+    //         const message = error.response?.data?.message || "Manual vehicle number submission failed";
+    //         toast.error(message);
+    //         speak(message);
+    //     } finally {
+    //         setUploading(false);
+    //     }
+    // };
+
+
     const submitManualVehicleNo = async () => {
         if (!selectedFile) {
-            toast.error("Please select a vehicle photo first");
+            toast.error(
+                "Please select a vehicle photo first"
+            );
             return;
         }
 
-        const manualValue = manualVehicleNo.trim();
+        const manualValue =
+            manualVehicleNo.trim();
+
         if (!manualValue) {
-            toast.error("Please enter the vehicle number manually");
+            toast.error(
+                "Please enter the vehicle number manually"
+            );
             return;
         }
 
@@ -301,73 +639,315 @@ const SelfieVerification = () => {
             setProgress(0);
 
             const formData = new FormData();
-            formData.append("sessionId", sessionId);
-            formData.append("doNumber", value?.doNumber);
-            formData.append("vehicleNo", manualValue);
-            formData.append("manualVehicleNo", manualValue);
-            formData.append("selfie", selectedFile);
 
-            await axios.post(`${API}/api/driver/upload-selfie`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-                timeout: 30000,
-                onUploadProgress: (progressEvent) => {
-                    const percent = Math.round(
-                        (progressEvent.loaded * 100) / progressEvent.total
-                    );
-                    setProgress(percent);
-                },
-            });
+            formData.append(
+                "sessionId",
+                sessionId
+            );
+
+            formData.append(
+                "doNumber",
+                value?.doNumber
+            );
+
+            formData.append(
+                "vehicleNo",
+                manualValue
+            );
+
+            formData.append(
+                "manualVehicleNo",
+                manualValue
+            );
+
+            formData.append(
+                "selfie",
+                selectedFile
+            );
+
+            const response = await axios.post(
+                `${API}/api/driver/upload-selfie`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type":
+                            "multipart/form-data"
+                    },
+
+                    timeout: 30000,
+
+                    onUploadProgress: (
+                        progressEvent
+                    ) => {
+                        const percent =
+                            Math.round(
+                                (progressEvent.loaded *
+                                    100) /
+                                progressEvent.total
+                            );
+
+                        setProgress(percent);
+                    },
+                }
+            );
+
+            // ==========================================
+            // ⭐ GET CURRENT SELFIE IMAGE PATH
+            // ==========================================
+
+            const selfieImagePath =
+                response.data?.data?.imagePath;
+
+            console.log(
+                "Manual vehicle selfie uploaded:",
+                selfieImagePath
+            );
+
+            if (!selfieImagePath) {
+                throw new Error(
+                    "Selfie uploaded but image path was not returned"
+                );
+            }
+
+            // ==========================================
+            // ⭐ STORE CURRENT SELFIE PATH
+            // ==========================================
+
+            sessionStorage.setItem(
+                "currentSelfieImagePath",
+                selfieImagePath
+            );
+
+            console.log(
+                "Current selfie stored:",
+                sessionStorage.getItem(
+                    "currentSelfieImagePath"
+                )
+            );
 
             setShowManualVehicleInput(false);
             setUploadErrorMsg("");
             setUploaded(true);
-            toast.success("Vehicle number accepted. You can now submit.");
+
+            toast.success(
+                "Vehicle number accepted. You can now submit."
+            );
+
         } catch (error) {
-            const message = error.response?.data?.message || "Manual vehicle number submission failed";
+            // Remove stale path if upload failed
+            sessionStorage.removeItem(
+                "currentSelfieImagePath"
+            );
+
+            const message =
+                error.response?.data?.message ||
+                "Manual vehicle number submission failed";
+
             toast.error(message);
             speak(message);
+
         } finally {
             setUploading(false);
         }
     };
+    // const finalizeCheckin = async () => {
+    //     try {
+    //         setUploading(true);
+    //         const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
+    //         const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
+    //         const editedDocs = JSON.parse(sessionStorage.getItem("editedDocs") || "[]");
+    //         const sourceCheckinId = sessionStorage.getItem("reusedDocumentSourceId");
+
+    //         const vehicleNo =
+    //             manualVehicleNo?.trim() || ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+    //         const driverName =
+    //             ocrDetails?.dl?.name || "Driver";
+
+    //         console.log("Finalize response received", sessionId, value);
+    //         const response = await axios.post(`${API}/api/driver/finalize`, {
+    //             sessionId,
+    //             doNo: value?.doNumber || null,
+    //             vehicleNo,
+    //             driverName,
+    //             mobile: value?.mobile || null,
+    //             lrNumber: value?.lrNumber || null,
+    //             sourceCheckinId: sourceCheckinId ? Number(sourceCheckinId) : null,
+    //             documentDetails: ocrDetails,
+    //             editedDocs
+    //         });
+    //         localStorage.removeItem("driver_session");
+
+    //         // Pass backend data to next screen
+    //         navigate("/driver/success", {
+    //             state: response.data.data
+    //         });
+
+    //     } catch (error) {
+    //         toast.error(error.response?.data?.message || "Finalize failed");
+    //         speak(error.response?.data?.message || "Finalize failed");
+    //     }
+    //     finally {
+    //         setUploading(false);
+    //     }
+    // };
 
     const finalizeCheckin = async () => {
         try {
             setUploading(true);
-            const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
-            const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
-            const editedDocs = JSON.parse(sessionStorage.getItem("editedDocs") || "[]");
-            const sourceCheckinId = sessionStorage.getItem("reusedDocumentSourceId");
+
+            const ocrDetailsRaw =
+                sessionStorage.getItem(
+                    "ocrConfirmedData"
+                );
+
+            const ocrDetails = ocrDetailsRaw
+                ? JSON.parse(ocrDetailsRaw)
+                : null;
+
+            const editedDocs = JSON.parse(
+                sessionStorage.getItem(
+                    "editedDocs"
+                ) || "[]"
+            );
+
+            const sourceCheckinId =
+                sessionStorage.getItem(
+                    "reusedDocumentSourceId"
+                );
+
+            // ==========================================
+            // ⭐ GET CURRENT SELFIE
+            // ==========================================
+
+            const currentSelfieImagePath =
+                sessionStorage.getItem(
+                    "currentSelfieImagePath"
+                );
+
+            console.log(
+                "Current selfie for finalize:",
+                currentSelfieImagePath
+            );
+
+            // ==========================================
+            // ⭐ VALIDATE CURRENT SELFIE
+            // ==========================================
+
+            if (!currentSelfieImagePath) {
+                toast.error(
+                    "Current selfie is missing. Please capture selfie again."
+                );
+
+                speak(
+                    "वर्तमान सेल्फी उपलब्ध नहीं है। कृपया सेल्फी दोबारा लें।"
+                );
+
+                return;
+            }
 
             const vehicleNo =
-                manualVehicleNo?.trim() || ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
+                manualVehicleNo?.trim() ||
+                ocrDetails?.rc?.vehicleNo ||
+                "UNKNOWN_VEHICLE";
+
             const driverName =
-                ocrDetails?.dl?.name || "Driver";
+                ocrDetails?.dl?.name ||
+                "Driver";
 
-            console.log("Finalize response received", sessionId, value);
-            const response = await axios.post(`${API}/api/driver/finalize`, {
-                sessionId,
-                doNo: value?.doNumber || null,
-                vehicleNo,
-                driverName,
-                mobile: value?.mobile || null,
-                lrNumber: value?.lrNumber || null,
-                sourceCheckinId: sourceCheckinId ? Number(sourceCheckinId) : null,
-                documentDetails: ocrDetails,
-                editedDocs
-            });
-            localStorage.removeItem("driver_session");
+            console.log(
+                "Finalize request:",
+                {
+                    sessionId,
+                    doNo: value?.doNumber,
+                    vehicleNo,
+                    currentSelfieImagePath
+                }
+            );
 
-            // Pass backend data to next screen
-            navigate("/driver/success", {
-                state: response.data.data
-            });
+            const response =
+                await axios.post(
+                    `${API}/api/driver/finalize`,
+                    {
+                        sessionId,
+
+                        doNo:
+                            value?.doNumber ||
+                            null,
+
+                        vehicleNo,
+
+                        driverName,
+
+                        mobile:
+                            value?.mobile ||
+                            null,
+
+                        lrNumber:
+                            value?.lrNumber ||
+                            null,
+
+                        sourceCheckinId:
+                            sourceCheckinId
+                                ? Number(
+                                    sourceCheckinId
+                                )
+                                : null,
+
+                        documentDetails:
+                            ocrDetails,
+
+                        editedDocs,
+
+                        // ==================================
+                        // ⭐ CURRENT SELFIE
+                        // ==================================
+
+                        currentSelfieImagePath
+                    }
+                );
+
+            // ==========================================
+            // SUCCESS
+            // ==========================================
+
+            localStorage.removeItem(
+                "driver_session"
+            );
+
+            // Optional cleanup
+            sessionStorage.removeItem(
+                "currentSelfieImagePath"
+            );
+
+            sessionStorage.removeItem(
+                "reusedDocumentSourceId"
+            );
+
+            navigate(
+                "/driver/success",
+                {
+                    state:
+                        response.data.data
+                }
+            );
 
         } catch (error) {
-            toast.error(error.response?.data?.message || "Finalize failed");
-            speak(error.response?.data?.message || "Finalize failed");
-        }
-        finally {
+            console.error(
+                "Finalize error:",
+                error
+            );
+
+            toast.error(
+                error.response?.data?.message ||
+                "Finalize failed"
+            );
+
+            speak(
+                error.response?.data?.message ||
+                "Finalize failed"
+            );
+
+        } finally {
             setUploading(false);
         }
     };
