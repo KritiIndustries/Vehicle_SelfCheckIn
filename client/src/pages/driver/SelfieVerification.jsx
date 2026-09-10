@@ -21,6 +21,7 @@ const SelfieVerification = () => {
 
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+    const finalizeInFlightRef = useRef(false);
 
     const [preview, setPreview] = useState(null);
     const [uploading, setUploading] = useState(false);
@@ -792,6 +793,9 @@ const SelfieVerification = () => {
     // };
 
     const finalizeCheckin = async () => {
+        if (finalizeInFlightRef.current) return;
+        finalizeInFlightRef.current = true;
+
         try {
             setUploading(true);
 
@@ -949,6 +953,7 @@ const SelfieVerification = () => {
 
         } finally {
             setUploading(false);
+            finalizeInFlightRef.current = false;
         }
     };
 

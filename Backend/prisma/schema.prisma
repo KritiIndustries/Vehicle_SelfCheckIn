@@ -139,6 +139,15 @@ model Driver_Temp_Upload {
   @@index([Session_Id])
 }
 
+model Driver_Checkin_Claim {
+  Id         Int      @id @default(autoincrement())
+  Do_No      String   @unique
+  Session_Id String?
+  Created_At DateTime @default(now())
+
+  @@map("DRIVER_CHECKIN_CLAIM")
+}
+
 model Weighbridge {
   Id            Int      @id @default(autoincrement())
 

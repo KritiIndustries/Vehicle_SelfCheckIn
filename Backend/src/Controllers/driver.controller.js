@@ -1416,17 +1416,17 @@ export const finalizeCheckin = asyncHandler(
             currentSelfieImagePath,
         } = req.body;
 
-        console.log("========== FINALIZE CHECK-IN ==========");
+        // console.log("========== FINALIZE CHECK-IN ==========");
 
-        console.log("Finalize Request:", {
-            sessionId,
-            doNo,
-            vehicleNo,
-            driverName,
-            mobile,
-            sourceCheckinId,
-            currentSelfieImagePath,
-        });
+        // console.log("Finalize Request:", {
+        //     sessionId,
+        //     doNo,
+        //     vehicleNo,
+        //     driverName,
+        //     mobile,
+        //     sourceCheckinId,
+        //     currentSelfieImagePath,
+        // });
 
         // ============================================================
         // 1. BASIC VALIDATION
@@ -1727,6 +1727,25 @@ export const finalizeCheckin = asyncHandler(
             );
         }
 
+        // Claim the DO before calling SAP. The unique key makes this atomic
+        // across concurrent requests and across multiple production workers.
+        try {
+            await prisma.driver_Checkin_Claim.create({
+                data: {
+                    Do_No: doNo,
+                    Session_Id: sessionId || null,
+                },
+            });
+        } catch (error) {
+            if (error?.code === "P2002") {
+                throw new ApiError(
+                    409,
+                    "यह DO नंबर पहले ही प्रोसेस हो रहा है या रिपोर्ट इन हो चुका है।"
+                );
+            }
+            throw error;
+        }
+
         // ============================================================
         // 11. SAP ZGP REGISTRATION
         // ============================================================
@@ -1736,21 +1755,14 @@ export const finalizeCheckin = asyncHandler(
             `/ZGP_REGISTRATION_API_SRV/` +
             `GatePassRegistrationSet`;
 
-        console.log(
-            "Fetching SAP CSRF token..."
-        );
+        let insertResult;
 
-        const tokenAndcookie =
-            await fetchCsrfToken(
-                secondaryURL
-            );
+        try {
+            console.log("Fetching SAP CSRF token...");
+            const tokenAndcookie = await fetchCsrfToken(secondaryURL);
 
-        console.log(
-            "Calling SAP ZGP API..."
-        );
-
-        const insertResult =
-            await insertZGP(
+            console.log("Calling SAP ZGP API...");
+            insertResult = await insertZGP(
                 {
                     sessionId,
                     doNo,
@@ -1762,15 +1774,18 @@ export const finalizeCheckin = asyncHandler(
                 tokenAndcookie
             );
 
-        if (
-            !insertResult ||
-            !insertResult.success
-        ) {
-            throw new ApiError(
-                500,
-                insertResult?.message ||
-                "ZGP API failed"
-            );
+            if (!insertResult?.success) {
+                throw new ApiError(
+                    500,
+                    insertResult?.message || "ZGP API failed"
+                );
+            }
+        } catch (error) {
+            // SAP did not create the pass, so allow a genuine retry.
+            await prisma.driver_Checkin_Claim.deleteMany({
+                where: { Do_No: doNo },
+            });
+            throw error;
         }
 
         console.log(
@@ -1927,10 +1942,10 @@ export const finalizeCheckin = asyncHandler(
                             },
                         });
 
-                    console.log(
-                        "Driver Check-in created:",
-                        checkin.Id
-                    );
+                    // console.log(
+                    //     "Driver Check-in created:",
+                    //     checkin.Id
+                    // );
 
                     // ==================================================
                     // 12.3 CREATE DRIVER_DOCUMENTS
@@ -1948,9 +1963,9 @@ export const finalizeCheckin = asyncHandler(
                         of finalDocuments
                     ) {
 
-                        console.log(
-                            `Creating document: ${document.Doc_Type}`
-                        );
+                        // console.log(
+                        //     `Creating document: ${document.Doc_Type}`
+                        // );
 
                         const created =
                             await tx.driver_Documents.create(
@@ -1984,16 +1999,16 @@ export const finalizeCheckin = asyncHandler(
                         );
                     }
 
-                    console.log(
-                        "Created documents:",
-                        createdDocuments.map(
-                            (doc) => ({
-                                Id: doc.Id,
-                                type:
-                                    doc.Doc_Type,
-                            })
-                        )
-                    );
+                    // console.log(
+                    //     "Created documents:",
+                    //     createdDocuments.map(
+                    //         (doc) => ({
+                    //             Id: doc.Id,
+                    //             type:
+                    //                 doc.Doc_Type,
+                    //         })
+                    //     )
+                    // );
 
                     // ==================================================
                     // 12.4 CREATE EDITED_DOCUMENTS
@@ -2102,6 +2117,10 @@ export const finalizeCheckin = asyncHandler(
         console.log(
             "========== FINALIZE SUCCESS =========="
         );
+
+        await prisma.driver_Checkin_Claim.deleteMany({
+            where: { Do_No: doNo },
+        });
 
         return res
             .status(201)
