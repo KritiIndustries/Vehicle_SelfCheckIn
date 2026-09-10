@@ -337,6 +337,7 @@ const SelfieVerification = () => {
             const ocrDetailsRaw = sessionStorage.getItem("ocrConfirmedData");
             const ocrDetails = ocrDetailsRaw ? JSON.parse(ocrDetailsRaw) : null;
             const editedDocs = JSON.parse(sessionStorage.getItem("editedDocs") || "[]");
+            const sourceCheckinId = sessionStorage.getItem("reusedDocumentSourceId");
 
             const vehicleNo =
                 manualVehicleNo?.trim() || ocrDetails?.rc?.vehicleNo || "UNKNOWN_VEHICLE";
@@ -351,6 +352,7 @@ const SelfieVerification = () => {
                 driverName,
                 mobile: value?.mobile || null,
                 lrNumber: value?.lrNumber || null,
+                sourceCheckinId: sourceCheckinId ? Number(sourceCheckinId) : null,
                 documentDetails: ocrDetails,
                 editedDocs
             });

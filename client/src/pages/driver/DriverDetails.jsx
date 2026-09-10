@@ -6,6 +6,9 @@ import InfoBanner from "@/components/InfoBanner";
 import StepIndicator from "@/components/StepIndicator";
 import { toast } from "sonner";
 import usePageAudio from "@/hooks/usePageAudio";
+import axios from "axios";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 const DriverDetails = () => {
     const navigate = useNavigate();
@@ -14,7 +17,9 @@ const DriverDetails = () => {
     const [doNumber, setDoNumber] = useState(doValue || 0);
     const [lrNumber, setLrNumber] = useState("");
     const [mobile, setMobile] = useState("");
+    const [vehicleNo, setVehicleNo] = useState("");
     const [doValidated, setDoValidated] = useState(true);
+    const [lookingUpVehicle, setLookingUpVehicle] = useState(false);
 
     const [speak, audioEnabled, toggleAudio] = usePageAudio();
 
@@ -46,26 +51,52 @@ const DriverDetails = () => {
         }
     };
 
-    const handleNext = () => {
-        if (!lrNumber || mobile.length !== 10) return;
+    const handleNext = async () => {
+        if (!lrNumber || mobile.length !== 10 || !vehicleNo.trim()) return;
 
-        sessionStorage.setItem("driverDetails", JSON.stringify({
+        const driverDetails = {
             doNumber,
             lrNumber,
-            mobile
-        }));
+            mobile,
+            vehicleNo: vehicleNo.trim().toUpperCase(),
+        };
+
+        sessionStorage.setItem("driverDetails", JSON.stringify(driverDetails));
         if (!doValue) {
             toast.error("कृपया डीलर से लिंक प्राप्त करें।.");
             speak("कृपया डीलर से लिंक प्राप्त करें");
             return;
         }
-        navigate("/driver/documents", {
-            state: {
-                doNumber,
-                lrNumber,
-                mobile
+
+        setLookingUpVehicle(true);
+        try {
+            const response = await axios.get(
+                `${API}/api/driver/lookup/${encodeURIComponent(driverDetails.vehicleNo)}`
+            );
+            const result = response.data?.data;
+
+            if (result?.found) {
+                sessionStorage.setItem("ocrData", JSON.stringify({
+                    dl: { fields: result.fields.dl },
+                    insurance: { fields: result.fields.insurance },
+                    rc: { fields: result.fields.rc },
+                    fitness: { fields: result.fields.fitness },
+                }));
+                sessionStorage.setItem("reusedDocumentSourceId", String(result.sourceCheckinId));
+            } else {
+                sessionStorage.removeItem("reusedDocumentSourceId");
+                sessionStorage.removeItem("ocrData");
             }
-        });
+
+            navigate(result?.found ? "/driver/doc-review" : "/driver/documents", {
+                state: driverDetails,
+            });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Vehicle lookup failed");
+            speak(error.response?.data?.message || "Vehicle lookup failed");
+        } finally {
+            setLookingUpVehicle(false);
+        }
     };
 
     const replayAudio = () => {
@@ -123,6 +154,19 @@ const DriverDetails = () => {
 
                         <div>
                             <label className="text-sm font-medium text-foreground block mb-1.5">
+                                Vehicle Number / वाहन नंबर
+                            </label>
+                            <input
+                                value={vehicleNo}
+                                onChange={(e) => setVehicleNo(e.target.value.toUpperCase())}
+                                maxLength={20}
+                                placeholder="Ex: MH12AB1234"
+                                className="w-full px-4 py-3 border border-input rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-sm font-medium text-foreground block mb-1.5">
                                 Mobile Number / मोबाइल नंबर
                             </label>
 
@@ -147,10 +191,10 @@ const DriverDetails = () => {
                 <div className="page-bottom">
                     <button
                         onClick={handleNext}
-                        disabled={!lrNumber || !mobile}
+                        disabled={!lrNumber || mobile.length !== 10 || !vehicleNo.trim() || lookingUpVehicle}
                         className="btn-primary-full disabled:opacity-50"
                     >
-                        Next / आगे बढ़ें →
+                        {lookingUpVehicle ? "Checking vehicle... / जांच जारी है..." : "Next / आगे बढ़ें →"}
                     </button>
                 </div>
             )}

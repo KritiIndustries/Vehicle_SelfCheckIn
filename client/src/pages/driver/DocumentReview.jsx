@@ -7,7 +7,6 @@ import InfoBanner from "@/components/InfoBanner";
 import usePageAudio from "@/hooks/usePageAudio";
 import { CheckExpiryDate } from "@/Helpers/CheckExpiryDate";
 import { toast } from "sonner";
-import axios from "axios";
 
 const emptyState = {
   dl: { name: "", licenseNo: "", expiryDate: "" },
@@ -21,7 +20,6 @@ const DocumentReview = () => {
   const [docs, setDocs] = useState(emptyState);
   const [speak, audioEnabled, toggleAudio] = usePageAudio();
   const [originalDocs, setOriginalDocs] = useState(emptyState);
-  const API = import.meta.env.VITE_API_BASE_URL;
 
   // ✅ Load OCR data Working Fine
   // useEffect(() => {
@@ -165,10 +163,16 @@ const DocumentReview = () => {
         value: docs.dl.name,
         message: "Driver Name is required",
       },
-      {
+       {
         value: docs.dl.licenseNo,
         message: "License Number is required",
       },
+      ...(sessionStorage.getItem("reusedDocumentSourceId")
+        ? []
+        : [{
+            value: docs.dl.licenseNo,
+            message: "License Number is required",
+          }]),    
       {
         value: docs.dl.expiryDate,
         message: "DL Expiry Date is required",

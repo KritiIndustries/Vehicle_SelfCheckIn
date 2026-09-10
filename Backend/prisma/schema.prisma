@@ -43,6 +43,7 @@ model Driver_Checkin {
   Vehicle_No             String
   Driver_Name            String
   Mobile                 String
+  License_Number         String?
 
   Licence_Expiry_Date    DateTime?
   Insurance_Number       String?

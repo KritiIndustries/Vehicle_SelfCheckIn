@@ -397,6 +397,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         mobile,
         lrNumber,
         documentDetails,
+        sourceCheckinId,
     } = req.body;
 
     const payload = {
@@ -417,12 +418,34 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
         where: { Session_Id: sessionId },
     });
 
-    if (tempUploads.length < 5) {
+    const sourceDocuments = sourceCheckinId
+        ? await prisma.driver_Documents.findMany({
+            where: {
+                Driver_Checkin_Id: Number(sourceCheckinId),
+                Driver_Checkin: {
+                    Vehicle_No: vehicleNo,
+                    Status: { not: "Rejected" },
+                },
+                Doc_Type: { in: ["dl", "rc", "insurance", "fitness"] },
+            },
+        })
+        : [];
+
+    const documentUploads = tempUploads.length === 1 && sourceDocuments.length > 0
+        ? [...sourceDocuments.map((document) => ({
+            Doc_Type: document.Doc_Type,
+            Image_Path: document.Image_Path,
+            Expiry_Date: document.Expiry_Date,
+            Is_Selfie: false,
+        })), ...tempUploads]
+        : tempUploads;
+
+    if (documentUploads.length < 5) {
         throw new ApiError(400, "सभी दस्तावेज़ और सेल्फी आवश्यक हैं");
     }
 
     const requiredDocs = ["dl", "rc", "insurance", "fitness"];
-    const uploadedTypes = tempUploads.map((d) => d.Doc_Type);
+    const uploadedTypes = documentUploads.map((d) => d.Doc_Type);
 
     for (const doc of requiredDocs) {
         if (!uploadedTypes.includes(doc)) {
@@ -454,6 +477,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
     if (existing) {
         throw new ApiError(409, "आप पहले ही  रिपोर्ट इन कर लिया है।");
     }
+    
     const secondaryURL =
         `${process.env.SAP_BASE_URL}/ZGP_REGISTRATION_API_SRV/GatePassRegistrationSet`;
     //TODO: Remove http://ktappdq.kritiindia.com:8010 port will be 1081 for development and 8010 for production. Make it dynamic based on environment variable
@@ -520,6 +544,7 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
                 Vehicle_No: vehicleNo,
                 Driver_Name: driverName,
                 Mobile: mobile,
+                License_Number: documentDetails?.dl?.licenseNo ?? undefined,
                 Token: tokenNo, // ✅ stored
                 Licence_Expiry_Date: documentDetails?.dl?.expiryDate
                     ? new Date(documentDetails.dl.expiryDate)
@@ -592,11 +617,11 @@ export const finalizeCheckin = asyncHandler(async (req, res) => {
             fitness: documentDetails?.fitness?.expiryDate
         };
 
-        for (const upload of tempUploads) {
+        for (const upload of documentUploads) {
 
             const expiryDate = expiryMap[upload.Doc_Type]
                 ? new Date(expiryMap[upload.Doc_Type])
-                : null;
+                : upload.Expiry_Date || null;
 
             await tx.driver_Documents.create({
                 data: {
@@ -634,6 +659,56 @@ export const validatePage = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, entry, "Details found"));
 })
+
+export const lookupVehicle = asyncHandler(async (req, res) => {
+    const vehicleNo = req.params.vehicleNo?.trim();
+
+    if (!vehicleNo) {
+        throw new ApiError(400, "Vehicle number is required");
+    }
+
+    const entry = await prisma.driver_Checkin.findFirst({
+        where: {
+            Vehicle_No: vehicleNo,
+            Status: { not: "Rejected" },
+        },
+        orderBy: { Created_At: "desc" },
+        include: {
+            Documents: {
+                where: { Doc_Type: { in: ["dl", "rc", "insurance", "fitness"] } },
+                orderBy: { Created_At: "desc" },
+            },
+        },
+    });
+
+    if (!entry) {
+        return res.status(200).json(new ApiResponse(200, { found: false }, "Vehicle not found"));
+    }
+
+    return res.status(200).json(new ApiResponse(200, {
+        found: true,
+        sourceCheckinId: entry.Id,
+        fields: {
+            dl: {
+                name: entry.Driver_Name || "",
+                licenseNo: entry.License_Number || "",
+                expiryDate: entry.Licence_Expiry_Date?.toISOString().slice(0, 10) || "",
+            },
+            insurance: {
+                policyNo: entry.Insurance_Number || "",
+                expiryDate: entry.Insurance_Expiry_Date?.toISOString().slice(0, 10) || "",
+            },
+            rc: {
+                vehicleNo: entry.Vehicle_No || "",
+                chassisNo: entry.Chassis_Number || "",
+                expiryDate: entry.Rc_Expiry_Date?.toISOString().slice(0, 10) || "",
+            },
+            fitness: {
+                expiryDate: entry.Fitness_Expiry_Date?.toISOString().slice(0, 10) || "",
+            },
+        },
+    }, "Vehicle found"));
+});
 export const uploadSingleDocument = asyncHandler(async (req, res) => {
     const { sessionId, doNumber, type } = req.body;
 
