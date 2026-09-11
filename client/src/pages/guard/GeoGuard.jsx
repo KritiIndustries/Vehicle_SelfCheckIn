@@ -83,6 +83,19 @@ const GeoGuard = ({ children, radius: radiusProp }) => {
 
         setIsFetchingLocation(true);
 
+        //TODO:Remove this after Testing
+        const testSecret = localStorage.getItem("GEOFENCE_TEST_SECRET");
+
+        if (testSecret === "KASTA_TEST_2026") {
+            console.log("⚠️ Geofence bypass enabled");
+
+            setStatus("allowed");
+            setWithinRange(true);
+            setIsFetchingLocation(false);
+
+            return;
+        }
+
         if (!navigator.geolocation) {
             setStatus("no-geolocation");
             setIsFetchingLocation(false);
