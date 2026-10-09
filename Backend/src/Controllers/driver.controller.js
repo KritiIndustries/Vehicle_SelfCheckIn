@@ -142,7 +142,7 @@ export const uploadTempDocuments = asyncHandler(async (req, res) => {
         throw new ApiError(400, "No files uploaded");
     }
     let types = req.body.types;
-    console.log("types ", types);
+    // console.log("types ", types);
 
 
     if (typeof types === "string") {
@@ -1694,16 +1694,16 @@ export const finalizeCheckin = asyncHandler(
             },
         ];
 
-        console.log(
-            "Final documents:",
-            finalDocuments.map(
-                (doc) => ({
-                    type: doc.Doc_Type,
-                    imagePath:
-                        doc.Image_Path,
-                })
-            )
-        );
+        // console.log(
+        //     "Final documents:",
+        //     finalDocuments.map(
+        //         (doc) => ({
+        //             type: doc.Doc_Type,
+        //             imagePath:
+        //                 doc.Image_Path,
+        //         })
+        //     )
+        // );
 
         // ============================================================
         // 10. CHECK EXISTING CHECK-IN
@@ -1758,7 +1758,7 @@ export const finalizeCheckin = asyncHandler(
         let insertResult;
 
         try {
-            console.log("Fetching SAP CSRF token...");
+            // console.log("Fetching SAP CSRF token...");
             const tokenAndcookie = await fetchCsrfToken(secondaryURL);
 
             console.log("Calling SAP ZGP API...");
@@ -1790,7 +1790,7 @@ export const finalizeCheckin = asyncHandler(
 
         console.log(
             "SAP ZGP response:",
-            insertResult.responseData
+            insertResult.responseData?.Message || "No message"
         );
 
         // ============================================================

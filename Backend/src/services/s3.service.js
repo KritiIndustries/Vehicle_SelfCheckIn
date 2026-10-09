@@ -17,7 +17,7 @@ export const uploadToS3 = async (file, doNumber, type) => {
 
     const fileKey = `documents/${doNumber}/${fileName}`;
 
-    console.log("Uploading to S3:", fileKey);
+    // console.log("Uploading to S3:", fileKey);
 
     const command = new PutObjectCommand({
         Bucket: process.env.S3_BUCKET_NAME,
@@ -68,7 +68,7 @@ export const deleteFromS3 = async (fileUrl) => {
 
         await s3.send(command); // ✅ same s3 client instance as uploadToS3
 
-        console.log(`✅ Deleted from S3: ${key}`);
+        // console.log(`✅ Deleted from S3: ${key}`);
         return true;
 
     } catch (error) {

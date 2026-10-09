@@ -9,7 +9,7 @@ export const extractVehicleNumbersFromSelfie = async (imageUrl) => {
 
     const normalized = normalizeText(lines);
 
-    console.log("OCR:", normalized);
+    // console.log("OCR:", normalized);
 
     const tokens = normalized
         .join(" ")
@@ -139,7 +139,7 @@ export const extractVehiclePrefixesFromSelfie = async (imageUrl) => {
 
     const normalized = normalizeText(lines);
 
-    console.log("OCR:", normalized);
+    // console.log("OCR:", normalized);
 
     const results = new Set();
 
@@ -157,7 +157,7 @@ export const extractVehiclePrefixesFromSelfie = async (imageUrl) => {
         }
     }
 
-    console.log("PREFIXES:", [...results]);
+    // console.log("PREFIXES:", [...results]);
 
     return [...results];
 };
