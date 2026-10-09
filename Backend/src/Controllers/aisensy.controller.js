@@ -185,7 +185,7 @@ export const exportToExcel = asyncHandler(async (req, res) => {
             return res.status(400).send(`
                 <h2>Coupon Excel Export</h2>
                 <p>Please provide both start date and end date.</p>
-                <form method="GET" action="/api/export/excel">
+                <form method="GET" action="/api/aisensy/export/excel">
                     <label>Start Date:</label>
                     <input type="date" name="startDate" required
                         value="${startDate || ""}" />
