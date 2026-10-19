@@ -39,6 +39,7 @@ export default function GuardDashboard() {
     const fileInputRef = useRef(null);
     const [numberPlateUploaded, setNumberPlateUploaded] = useState(false);
     const [uploadLoading, setUploadLoading] = useState(false);
+    const [vehicleSearch, setVehicleSearch] = useState("");
 
     const fetchVehicles = async () => {
         try {
@@ -72,10 +73,40 @@ export default function GuardDashboard() {
         return "waiting";
     };
 
-    const queueVehicles = vehicles.filter((v) => v.status === "waiting");
-    const insideVehicles = vehicles.filter(
-        (v) => v.status === "CheckedIn" || v.status === "loading",
-    );
+    // const queueVehicles = vehicles.filter((v) => v.status === "waiting");
+    // const insideVehicles = vehicles.filter(
+    //     (v) => v.status === "CheckedIn" || v.status === "loading",
+    // );
+    // Only vehicles reported in the last 24 hours
+    const last24HoursVehicles = vehicles.filter((v) => {
+        if (!v.entryTime) return false;
+
+        const entryTime = new Date(v.entryTime).getTime();
+        const now = Date.now();
+        const last24Hours = now - 24 * 60 * 60 * 1000;
+
+        return (
+            !Number.isNaN(entryTime) &&
+            entryTime >= last24Hours &&
+            entryTime <= now
+        );
+    });
+
+    // Queue vehicles with number search
+    const queueVehicles = last24HoursVehicles.filter((v) => {
+        return (
+            v.status === "waiting" &&
+            v.vehicleNo?.toLowerCase().includes(vehicleSearch.trim().toLowerCase())
+        );
+    });
+
+    // Vehicles currently inside with number search
+    const insideVehicles = last24HoursVehicles.filter((v) => {
+        return (
+            (v.status === "CheckedIn" || v.status === "loading") &&
+            v.vehicleNo?.toLowerCase().includes(vehicleSearch.trim().toLowerCase())
+        );
+    });
 
     const handleCheckIn = async (id) => {
         try {
@@ -264,6 +295,21 @@ export default function GuardDashboard() {
                 >
                     Inside ({insideVehicles.length})
                 </TabButton>
+            </div>
+            {/* VEHICLE NUMBER SEARCH */}
+            <div className="px-5 mb-3 shrink-0">
+                <input
+                    type="text"
+                    value={vehicleSearch}
+                    onChange={(e) => setVehicleSearch(e.target.value)}
+                    placeholder="Search vehicle number..."
+                    className="w-full px-4 py-3 rounded-xl outline-none"
+                    style={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        color: "hsl(var(--foreground))",
+                    }}
+                />
             </div>
 
             {/* LIST */}
