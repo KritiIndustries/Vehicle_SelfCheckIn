@@ -18,6 +18,7 @@ import GuardLogin from "./pages/guard/GuardLogin";
 import GuardDashboard from "./pages/guard/GuardDashboard";
 import GeoGuard from "./pages/guard/GeoGuard";
 import ValidateHomePage from "./pages/driver/ValidateHomePage";
+import MassistUpload from "./components/MassistUpload";
 
 
 const queryClient = new QueryClient();
@@ -89,6 +90,14 @@ const App = () => (
               <GuardDashboard />
             </GeoGuard>
           } />
+          <Route
+            path="/MassistUpload"
+            element={
+              
+                <MassistUpload />
+              
+            }
+          />
 
           {/* 404 */}
           <Route path="*" element={

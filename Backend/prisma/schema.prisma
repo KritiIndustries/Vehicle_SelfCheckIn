@@ -209,3 +209,83 @@ model Rejected_Vehicle {
   @@index([Driver_Checkin_Id])
   @@index([Rejected_By])
 }
+model Mapping {
+  EmployeeCode                Int      @id
+  State                       String?  @db.VarChar(50)
+  Division                    String?  @db.VarChar(100)
+  EmployeeName                String?  @db.VarChar(150)
+  Designation                 String?  @db.VarChar(100)
+  Position                    String?  @db.VarChar(150)
+  EmployeeEmailID             String?  @db.VarChar(254)
+  ReportingManagerEmpCode     Int?
+  ReportingManagerName        String?  @db.VarChar(150)
+  ReportingManagerEmailID     String?  @db.VarChar(254)
+  ReportingManagerDesignation String?  @db.VarChar(100)
+  RSM                         String?  @db.VarChar(150)
+  RSMEmailID                  String?  @db.VarChar(254)
+  RSMDesignation              String?  @db.VarChar(100)
+  VerticleHeadAgri            String? @db.VarChar(150)
+  VerticleHeadBP              String? @db.VarChar(150)
+
+  @@map("Mapping")
+}
+model visits {
+  Id                            BigInt   @id @default(autoincrement()) @db.UnsignedBigInt
+  Date                          DateTime? @db.Date
+  Day                           String?  @db.VarChar(15)
+  EmployeeZone                  String?  @db.VarChar(50)
+  EmployeeState                 String?  @db.VarChar(100)
+  EmployeeCity                  String?  @db.VarChar(100)
+  EmployeeName                  String?  @db.VarChar(150)
+  EmpCode                       Int?
+  EmployeeMobile                String?  @db.VarChar(15)
+  EmployeeDesignation           String?  @db.VarChar(100)
+  ReportingHead                 String?  @db.VarChar(150)
+  ReportingHeadPhone            String?  @db.VarChar(15)
+  AttendanceStatus              String?  @db.VarChar(20)
+  WorkingStatus                 String?  @db.VarChar(100)
+  Device                        String?  @db.VarChar(100)
+  Beat                          String?  @db.VarChar(255)
+  TC                            Int?
+  PC                            Int?
+  FirstVisitCheckinTime         String?  @db.VarChar(30)
+  LastVisitEndTime              String?  @db.VarChar(30)
+  FieldVisitHours               DateTime? @db.Time(0)
+  StartTime                     String?  @db.VarChar(30)
+  EndTime                       String?  @db.VarChar(30)
+  TotalWorkingHours              DateTime? @db.Time(0)
+  OnlineOffline                 String?  @db.VarChar(50)
+  BatteryStatus                 String?  @db.VarChar(20)
+  TotalClients                  Int?
+  NewClients                    Int?
+  Version                       String?  @db.VarChar(30)
+  TotalDistanceTravelled         Decimal? @db.Decimal(10, 2)
+  VisitStayTime                 String?  @db.VarChar(20)
+  FirstStartCounter             String?  @db.VarChar(50)
+  TotalDistanceTravelledByRoute Decimal? @db.Decimal(10, 2)
+  FirstFieldActivityStartTime   String?  @db.VarChar(30)
+  FieldTimeWithActivity         DateTime? @db.Time(0)
+  NoOfFieldActivityPlanned      Int?
+  NoOfFieldActivityDone         Int?
+  NoofVisitsPlanned             Int?
+  UnplannedVisits               Int?
+  ActualVsPlanned               String?  @db.VarChar(100)
+  RetailingTime                 String?  @db.VarChar(20)
+  DealerVisit                   Int?
+  LeadsVisit                    Int?
+  ActualVisits                  Int?
+  TotalOL                       Int?
+  VisitedTown                   String?  @db.VarChar(150)
+  PJPRemarks                    String?  @db.Text
+  PJPBeats                      String?  @db.Text
+  Diverson                      String?  @db.VarChar(100)
+  PJPLastBeats                  String?  @db.Text
+  PJPFirstBeats                 String?  @db.Text
+  Division                      String?  @db.VarChar(150)
+
+ // Keep your existing indexes and add this constraint:
+  @@unique([EmpCode, Date], name: "EmpCode_Date_unique")
+  @@index([Date], map: "Date")
+  @@index([EmpCode, Date], map: "EmpCode_Date")
+  @@map("visits")
+}
