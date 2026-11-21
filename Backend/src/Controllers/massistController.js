@@ -57,20 +57,20 @@ export async function uploadMassistReport(req, res) {
             emails: { status: "processing" },
         });
 
-        // setImmediate(() => {
-        //     sendEmployeeReports(importResult.reports)
-        //         .then((emailResult) => {
-        //             console.info("Massist employee reports completed:", {
-        //                 attempted: emailResult.attempted,
-        //                 sent: emailResult.sent,
-        //                 skipped: emailResult.skipped.length,
-        //                 failed: emailResult.failed.length,
-        //             });
-        //         })
-        //         .catch((error) => {
-        //             console.error("Massist employee report sending failed:", error);
-        //         });
-        // });
+        setImmediate(() => {
+            sendEmployeeReports(importResult.reports)
+                .then((emailResult) => {
+                    console.info("Massist employee reports completed:", {
+                        attempted: emailResult.attempted,
+                        sent: emailResult.sent,
+                        skipped: emailResult.skipped.length,
+                        failed: emailResult.failed.length,
+                    });
+                })
+                .catch((error) => {
+                    console.error("Massist employee report sending failed:", error);
+                });
+        });
     } catch (error) {
         console.error("Massist import failed:", error);
 

@@ -104,8 +104,9 @@ test("loads real visit data for the requested month and matches EmpCode to Emplo
   assert.deepEqual(groups[0].to, [
     "agri.head@example.test",
     "bp.head@example.test",
+    "rsm.agri@example.test",
   ]);
-  assert.deepEqual(groups[0].cc, ["rsm.agri@example.test"]);
+  assert.deepEqual(groups[0].cc, []);
   assert.equal(groups[0].employees.length, 1);
   assert.equal(groups[0].employees[0].EmpCode, 101);
   assert.equal(groups[0].employees[0].visitsPlanned, 7);
@@ -206,6 +207,11 @@ test("API resolves a missing period from single-month visits and sends a populat
     assert.equal(response.body.reportingPeriod, "October 2026");
     assert.equal(response.body.sent, 1);
     assert.equal(sentMessages.length, 1);
+    assert.equal(
+      sentMessages[0].to,
+      "agri.head@example.test, bp.head@example.test, rsm.agri@example.test",
+    );
+    assert.match(sentMessages[0].cc, /garima\.singh@kritiindia\.com/);
     assert.match(sentMessages[0].html, /Employee 101/);
     assert.match(sentMessages[0].html, />5</);
   } finally {

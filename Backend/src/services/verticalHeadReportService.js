@@ -466,12 +466,10 @@ export function buildVerticalHeadReportGroups({
 
     if (!report) continue;
 
-    const toRecipients = dedupeEmails([
+    const verticalHeadRecipients = dedupeEmails([
       mapping.VerticleHeadAgri,
       mapping.VerticleHeadBP,
     ]);
-
-    if (!toRecipients.length) continue;
 
     const state = normalizeText(mapping.State);
     const division = normalizeText(mapping.Division);
@@ -489,14 +487,20 @@ export function buildVerticalHeadReportGroups({
 
     // Do not guess when multiple RSM emails exist for one
     // state/division. The report can still go to the heads.
-    const rsmRecipients =
-      rsmOptions.length === 1 ? rsmOptions : [];
+    const rsmRecipients = rsmOptions.length === 1 ? rsmOptions : [];
 
     if (rsmOptions.length > 1) {
       console.warn(
-        `[VerticalHeadReport] Ambiguous RSM for ${state}/${division}; CC omitted.`
+        `[VerticalHeadReport] Ambiguous RSM for ${state}/${division}; RSM omitted from To.`
       );
     }
+
+    const toRecipients = dedupeEmails([
+      ...verticalHeadRecipients,
+      ...rsmRecipients,
+    ]);
+
+    if (!verticalHeadRecipients.length) continue;
 
     const recipientKey = toRecipients.slice().sort().join("|");
 
@@ -522,7 +526,6 @@ export function buildVerticalHeadReportGroups({
     const group = groups.get(groupKey);
 
     group.to = dedupeEmails([...group.to, ...toRecipients]);
-    group.cc = dedupeEmails([...group.cc, ...rsmRecipients]);
 
     if (!group.employeesByCode.has(employeeCode)) {
       group.employeesByCode.set(employeeCode, {
@@ -591,6 +594,18 @@ export async function sendVerticalHeadReports(groups = []) {
   };
 
   for (const group of groups) {
+
+    if (
+      group.state?.trim().toUpperCase() === "MP" &&
+      group.division?.trim().toLowerCase() === "agriculture"
+    ) {
+      group.to = dedupeEmails([
+        ...(group.to || []),
+        "anaik@kritiindia.com",
+      ]);
+    }
+
+
     group.to = dedupeEmails(group.to);
     group.cc = dedupeEmails(
       (group.cc || []).filter(

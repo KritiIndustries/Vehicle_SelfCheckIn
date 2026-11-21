@@ -21,7 +21,7 @@ function report(empCode, overrides = {}) {
   };
 }
 
-test("Only Agriculture Vertical Head receives the report and RSM is included in CC", () => {
+test("Agriculture Vertical Head and RSM receive the report in To", () => {
   const groups = buildVerticalHeadReportGroups({
     mappings: [{
       EmployeeCode: 101,
@@ -38,8 +38,8 @@ test("Only Agriculture Vertical Head receives the report and RSM is included in 
   });
 
   assert.equal(groups.length, 1);
-  assert.deepEqual(groups[0].to, ["agri.head@example.test"]);
-  assert.deepEqual(groups[0].cc, ["rsm.agri@example.test"]);
+  assert.deepEqual(groups[0].to, ["agri.head@example.test", "rsm.agri@example.test"]);
+  assert.deepEqual(groups[0].cc, []);
   assert.equal(groups[0].employees.length, 1);
   assert.equal(groups[0].employees[0].EmpCode, 101);
   assert.match(buildVerticalHeadEmail(groups[0]).html, /Vertical Head \/ RSM Massist Report/);
@@ -71,8 +71,12 @@ test("When both Vertical Head emails are populated they share one consolidated r
   });
 
   assert.equal(groups.length, 1);
-  assert.deepEqual(groups[0].to, ["agri.head@example.test", "bp.head@example.test"]);
-  assert.deepEqual(groups[0].cc, ["rsm.agri@example.test"]);
+  assert.deepEqual(groups[0].to, [
+    "agri.head@example.test",
+    "bp.head@example.test",
+    "rsm.agri@example.test",
+  ]);
+  assert.deepEqual(groups[0].cc, []);
   assert.equal(groups[0].employees.length, 2);
 });
 
@@ -128,8 +132,26 @@ test("RSM is resolved by state and division, not by state alone", () => {
   assert.equal(groups.length, 2);
   const agriGroup = groups.find((group) => group.state === "MH" && group.division === "Agri");
   const bpGroup = groups.find((group) => group.state === "MH" && group.division === "BP");
-  assert.deepEqual(agriGroup.cc, ["agri.rsm@example.test"]);
-  assert.deepEqual(bpGroup.cc, ["bp.rsm@example.test"]);
+  assert.deepEqual(agriGroup.to, ["agri.head@example.test", "agri.rsm@example.test"]);
+  assert.deepEqual(bpGroup.to, ["bp.head@example.test", "bp.rsm@example.test"]);
+});
+
+test("reports still go to Vertical Heads when no RSM is selected", () => {
+  const groups = buildVerticalHeadReportGroups({
+    mappings: [{
+      EmployeeCode: 101,
+      State: "MH",
+      Division: "Agri",
+      RSMEmailID: null,
+      VerticleHeadAgri: "agri.head@example.test",
+      VerticleHeadBP: null,
+    }],
+    reports: [report(101)],
+  });
+
+  assert.equal(groups.length, 1);
+  assert.deepEqual(groups[0].to, ["agri.head@example.test"]);
+  assert.deepEqual(groups[0].cc, []);
 });
 
 test("Duplicate employee codes are deduplicated within a report and missing recipients are skipped", () => {
