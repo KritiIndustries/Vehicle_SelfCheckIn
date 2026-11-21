@@ -114,12 +114,11 @@ SELECT *
         };
 
         const excelData = rows.map((item) => ({
-            Id: item.Id,
             Do_No: item.Do_No,
             Vehicle_No: item.Vehicle_No,
             Driver_Name: item.Driver_Name,
             Mobile: item.Mobile,
-
+            License_Number: item.License_Number,
             Licence_Expiry_Date: formatDateOnly(
                 item.Licence_Expiry_Date
             ),
@@ -146,18 +145,9 @@ SELECT *
             ReportIn_Time: formatISTDateTime(
                 item.ReportIn_Time
             ),
-
-            Latitude: item.Latitude,
-            Longitude: item.Longitude,
-
             Created_At: formatISTDateTime(
                 item.Created_At
             ),
-
-            Updated_At: formatISTDateTime(
-                item.Updated_At
-            ),
-            License_Number: item.License_Number
         }));
 
         // Create Excel worksheet
